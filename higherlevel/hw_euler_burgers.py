@@ -69,7 +69,7 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
         r.integrate(r.t+dt)
         reprint("%g" % r.t)
         tres.append(r.t)
-        ures.append(r.y.reshape(1, M2)) # reshape?
+        ures.append(r.y) # reshape?
     print('')
     Ue = get_exact(nu, X, np.array(tres), bHighDPS=abs(nu)<1/50).T
     print (Ue.shape)
