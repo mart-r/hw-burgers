@@ -10,6 +10,11 @@ sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
 # my stuff
 from utils.nonuniform_grid import nonuniform_grid
 from hwbasics.HwBasics import Pn_nu, Pnx_nu, Hm_nu
+from utils.reprint import reprint
+
+# exact
+from utils.burgers_exact import exact_new_mp as exact
+
 
 def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=False, nua=1):
     M = 2**J
@@ -58,10 +63,22 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
     ures = [u0]
     while r.successful() and r.t < tf:
         r.integrate(r.t+dt)
-        print("%g" % r.t)
+        reprint("%g" % r.t)
         tres.append(r.t)
         ures.append(r.y.reshape(1, M2)) # reshape?
-    return X.flatten(), tres, ures
+    print('')
+    Ue = get_exact(nu, X, np.array(tres)).T
+    print (Ue.shape)
+    return X.flatten(), tres, ures, Ue
+
+def get_exact(nu, X, T, bHighDPS=True):
+    #exact_new_mp(xv, tv, eps, l=1, u0=1, infty=200):
+    if bHighDPS:
+        import mpmath as mp
+        mp.mp.dps = 800
+        infty = 800
+        print('Now calculating exact, this will take some time...')
+    return exact(X.flatten(), T, nu, infty=infty)
 
 
 def fun(t, u, M2, nu, mat0, mat1, mat2):
@@ -75,22 +92,25 @@ def fun(t, u, M2, nu, mat0, mat1, mat2):
     return dxdy.flatten()
 
 
-def plot_results(X, T, U):
+def plot_results(X, T, U, Ue, bShow=True):
     print('Showing results!')
     from matplotlib import pyplot as plt
     i = 0
-    for t, u in zip(T, U):
-        if i%100 == 0:
+    mdiff = 0
+    for t, u, e in zip(T, U, Ue): # need to reshape e
+        if i%100 == 0 and bShow:
             plt.figure()
             plt.plot(X, u.flatten())
             plt.title('t=%f'%t)
             print('title:', 't=%f'%t)
         i += 1
-    plt.show()
-    print('Showed results!')
+        mdiff = max(mdiff, np.max(u-e))
+    if bShow:
+        plt.show()
+    print('Showed results!, maxDIFF:', mdiff)
 
 
 if __name__ == '__main__':
     print('starting')
-    [X, T, U] = hw_euler_burgers_newest(3, nu=1/(100 * np.pi), bHO=True, nua=.75)
-    plot_results(X, T, U)
+    [X, T, U, Ue] = hw_euler_burgers_newest(2, nu=1/(100 * np.pi), bHO=True, nua=.75)
+    plot_results(X, T, U, Ue, bShow=False)
