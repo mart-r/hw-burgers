@@ -48,11 +48,15 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
     u0 = u0i * np.sin(np.pi * X/L)
 
     if bHO:
-        mat = P4 - P4_1 @ X + 1/6 * P2_1 @ (X - X3)
-        mat1 = P3 - P4_1 + 1/6 * P2_1 @ (1 - 3 * X2)
-        mat2 = P2 - P2_1 @ X
+        # mat = P4 - P4_1 @ X + 1/6 * P2_1 @ (X - X3)
+        # mat1 = P3 - P4_1 + 1/6 * P2_1 @ (1 - 3 * X2)
+        # mat2 = P2 - P2_1 @ X
+        mat = P4 - np.dot(P4_1, X) + 1/6 * np.dot(P2_1, X - X3)
+        mat1 = P3 - P4_1 + 1/6 * np.dot(P2_1, 1 - 3 * X2)
+        mat2 = P2 - np.dot(P2_1, X)
     else:
-        mat = P2 - P2_1 @ X
+        # mat = P2 - P2_1 @ X
+        mat = P2 - np.dot(P2_1, X)
         mat1 = P1 - P2_1
         mat2 = H
 
@@ -86,8 +90,10 @@ def fun(t, u, M2, nu, mat0, mat1, mat2):
     u = u.reshape(1, M2) # need to reshape most likely
     # A = (u) / mat0
     A = np.linalg.solve(mat0.T, u.T).T
-    ux = A @ mat1 
-    uxx = A @ mat2
+    # ux = A @ mat1 
+    # uxx = A @ mat2
+    ux = np.dot(A, mat1)
+    uxx = np.dot(A, mat2)
     
     dxdy = - u * ux + nu * uxx
     return dxdy.flatten()
