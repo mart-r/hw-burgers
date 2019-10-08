@@ -67,12 +67,13 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
         tres.append(r.t)
         ures.append(r.y.reshape(1, M2)) # reshape?
     print('')
-    Ue = get_exact(nu, X, np.array(tres)).T
+    Ue = get_exact(nu, X, np.array(tres), bHighDPS=abs(nu)<1/50).T
     print (Ue.shape)
     return X.flatten(), tres, ures, Ue
 
 def get_exact(nu, X, T, bHighDPS=True):
     #exact_new_mp(xv, tv, eps, l=1, u0=1, infty=200):
+    infty = 200
     if bHighDPS:
         import mpmath as mp
         mp.mp.dps = 800
@@ -110,7 +111,14 @@ def plot_results(X, T, U, Ue, bShow=True):
     print('Showed results!, maxDIFF:', mdiff)
 
 
+def saver(fileName, X, T, U, Ue):
+    from utils.utils import save
+    save(fileName, X=X, T=T, U=U, Ue=Ue)
+
+
 if __name__ == '__main__':
     print('starting')
     [X, T, U, Ue] = hw_euler_burgers_newest(2, nu=1/(100 * np.pi), bHO=True, nua=.75)
     plot_results(X, T, U, Ue, bShow=False)
+    fileName = "HW_Burgers_test"
+    saver(fileName, X, T, U, Ue)
