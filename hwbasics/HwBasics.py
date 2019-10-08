@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import sys
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 
 def Pn_nu(J, n, Xg, Xc):
     M = 2**J

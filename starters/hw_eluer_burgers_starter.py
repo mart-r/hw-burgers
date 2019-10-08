@@ -4,7 +4,9 @@ from numpy import pi # in case you want pi (i.e in nu evaluation)
 import sys
 # my "package"
 sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
-from higherlevel.hw_euler_burgers import hw_euler_burgers_newest as solver
+from higherlevel.hw_euler_burgers import hw_euler_burgers_newest as solver, saver
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 
 def parse_nu(arg):
     try:        
@@ -71,4 +73,9 @@ if __name__ == '__main__':
     J, nu, tf, bHO, nua = parse_arguments(args)
     print('J, nu, tf, bHO, nua')
     print(J, nu, tf, bHO, nua)
-    solver(J, nu, tf, summax, u01, L, bHO, nua)
+    X, T, U, Ue = solver(J, nu, tf, summax, u01, L, bHO, nua)
+    fname = 'HW_Burgers_AS_J=%d_nu=%f_tf=%d_nua=%f'%(J, nu, tf, nua)
+    if bHO:
+        fname += "_HO"
+    fname += ".mat"
+    saver(fname, X, T, U, Ue)
