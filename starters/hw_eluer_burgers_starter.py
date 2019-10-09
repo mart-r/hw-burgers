@@ -4,7 +4,7 @@ from numpy import pi # in case you want pi (i.e in nu evaluation)
 import sys
 # my "package"
 sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
-from higherlevel.hw_euler_burgers import hw_euler_burgers_newest as solver, saver
+from higherlevel.hw_euler_burgers import hw_euler_burgers_newest as solver, saver, plot_results
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 
@@ -89,4 +89,5 @@ if __name__ == '__main__':
     if bHO:
         fname += "_HO"
     fname += ".mat"
+    plot_results(X, T,U ,Ue, False)
     saver(fname, X, T, U, Ue)
