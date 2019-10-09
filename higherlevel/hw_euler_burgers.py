@@ -14,6 +14,8 @@ from utils.reprint import reprint
 
 # exact
 from utils.burgers_exact import exact_new_mp as exact
+# cluster or not
+from getpass import getuser
 
 
 def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=False, nua=1, bFindExact=True):
@@ -60,6 +62,9 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
         mat1 = P1 - P2_1
         mat2 = H
 
+    # in cluster or not
+    cluster = getuser() == "mart.ratas"
+
     r = ode(fun).set_integrator('lsoda', nsteps=int(1e8))
     r.set_initial_value(u0.flatten(), 0).set_f_params(M2, nu, mat, mat1, mat2)
     dt = 1e-2 # TODO different? adaptive?
@@ -67,7 +72,11 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
     ures = [u0.flatten()]
     while r.t < tf:
         r.integrate(r.t+dt)
-        reprint("%g" % r.t)
+        toPrint = "%g" % r.t
+        if cluster:
+            print(toPrint)
+        else:
+            reprint(toPrint)
         tres.append(r.t)
         ures.append(r.y) # reshape?
         if (not r.successful and np.max(r.y) > 1e5) or len(tres) > tf/dt: # TODO - this is a "weird" limit
