@@ -16,7 +16,7 @@ from utils.reprint import reprint
 from utils.burgers_exact import exact_new_mp as exact
 
 
-def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=False, nua=1):
+def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=False, nua=1, bFindExact=True):
     M = 2**J
     M2 = 2 * M
 
@@ -60,19 +60,22 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
         mat1 = P1 - P2_1
         mat2 = H
 
-    r = ode(fun).set_integrator('vode', method='bdf', with_jacobian=False)
+    r = ode(fun).set_integrator('lsoda', nsteps=int(1e8))
     r.set_initial_value(u0.flatten(), 0).set_f_params(M2, nu, mat, mat1, mat2)
-    dt = 1e-3 # TODO different? adaptive?
+    dt = 1e-2 # TODO different? adaptive?
     tres = [0]
-    ures = [u0]
-    while r.successful() and r.t < tf:
+    ures = [u0.flatten()]
+    while r.t < tf:
         r.integrate(r.t+dt)
         reprint("%g" % r.t)
         tres.append(r.t)
         ures.append(r.y) # reshape?
-    print('')
-    Ue = get_exact(nu, X, np.array(tres), bHighDPS=abs(nu)<1/50).T
-    print (Ue.shape)
+        if (not r.successful and np.max(r.y) > 1e5) or len(tres) > tf/dt: # TODO - this is a "weird" limit
+            break
+    if bFindExact:
+        Ue = get_exact(nu, X, np.array(tres), bHighDPS=abs(nu)<1/50).T
+    else:
+        Ue = np.zeros((len(tres), M2))
     return X.flatten(), tres, ures, Ue
 
 def get_exact(nu, X, T, bHighDPS=True):
@@ -89,7 +92,8 @@ def get_exact(nu, X, T, bHighDPS=True):
 def fun(t, u, M2, nu, mat0, mat1, mat2):
     u = u.reshape(1, M2) # need to reshape most likely
     # A = (u) / mat0
-    A = np.linalg.solve(mat0.T, u.T).T
+    # A = np.linalg.solve(mat0.T, u.T).T
+    A = np.linalg.lstsq(mat0.T, u.T)[0].T
     # ux = A @ mat1 
     # uxx = A @ mat2
     ux = np.dot(A, mat1)

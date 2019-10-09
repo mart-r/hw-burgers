@@ -16,6 +16,15 @@ def parse_nu(arg):
         nu = eval(arg)
     return nu
 
+def parse_bool(argIn):
+    arg = ''
+    try:
+        arg = int(argIn)
+    except ValueError:
+        arg = argIn
+    parsedBool = bool(arg)
+    return parsedBool
+
 
 def parse_arguments(args):
     _usage1 = 'arguments:  J   nu     tf     bHO    nua'
@@ -25,6 +34,8 @@ def parse_arguments(args):
     tf = 1/2
     bHO = False
     nua = 1
+    bFindExact = True
+    # parse
     nargs = len(args)
     if nargs < 2:
         print(_usage)
@@ -46,14 +57,9 @@ def parse_arguments(args):
             print(_usage)
             raise Exception("Value for tf needs to be a float!")
     if nargs > 3:
-        arg = ''
         try:
-            arg = int(args[3])
-        except ValueError:
-            arg = args[3]
-        try:        
-            bHO = bool(arg)
-        except ValueError:
+            bHO = parse_bool(args[3])
+        except Exception:
             print(_usage)
             raise Exception("Value for bHO needs to be a boolean or an integer!")
     if nargs > 4:
@@ -62,7 +68,12 @@ def parse_arguments(args):
         except ValueError:
             print(_usage)
             raise Exception("Value for nua needs to be a float!")
-    return J, nu, tf, bHO, nua
+    if nargs > 5:
+        try:        
+            bFindExact = float(args[5])
+        except ValueError:
+            bFindExact = True 
+    return J, nu, tf, bHO, nua, bFindExact
 
 
 if __name__ == '__main__':
@@ -70,10 +81,10 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     u01 = 1 # not changing, for now at least
     L = 1   # not changing, for now at least
-    J, nu, tf, bHO, nua = parse_arguments(args)
-    print('J, nu, tf, bHO, nua')
-    print(J, nu, tf, bHO, nua)
-    X, T, U, Ue = solver(J, nu, tf, summax, u01, L, bHO, nua)
+    J, nu, tf, bHO, nua, bFindExact = parse_arguments(args)
+    print('J, nu, tf, bHO, nua, bFindExact')
+    print(J, nu, tf, bHO, nua, bFindExact)
+    X, T, U, Ue = solver(J, nu, tf, summax, u01, L, bHO, nua, bFindExact)
     fname = 'HW_Burgers_AS_J=%d_nu=%f_tf=%d_nua=%f'%(J, nu, tf, nua)
     if bHO:
         fname += "_HO"
