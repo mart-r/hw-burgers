@@ -32,7 +32,7 @@ def parse_bool(argIn):
         arg = int(argIn)
     except ValueError:
         arg = argIn
-    parsedBool = bool(arg)
+    parsedBool = bool(eval(arg))
     return parsedBool
 
 
