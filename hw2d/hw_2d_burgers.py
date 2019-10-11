@@ -66,14 +66,6 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
     # initial guess
     Ur = np.dot(Et, u0)
     Uxr = np.dot(Et, u0x)
-    from matplotlib import pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
-    ax = Axes3D(plt.gcf())
-    ax.plot_surface(X, T, Ur)
-    plt.show()
-    ax = Axes3D(plt.gcf())
-    ax.plot_surface(X, T, Uxr)
-    plt.show()
 
     r = 0
     mDiff = 1e10
@@ -85,11 +77,6 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
         Ur = Ucur
         Uxr = np.dot(A, Rx1)
         r += 1
-        # from matplotlib import pyplot as plt
-        # from mpl_toolkits.mplot3d import Axes3D
-        # ax = Axes3D(plt.gcf())
-        # ax.plot_surface(X, T, Ucur)
-        # plt.show()
     return X, T, Ur
 
 
@@ -97,25 +84,10 @@ def get_A(Nx, Ny, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr):
     mat = np.zeros((Ny,Nx)*2)
     Ix = np.eye(Nx)
     Iy = np.eye(Ny)
-
-    # import time
-    # start = time.time()
-    # for i in range(Ny):
-    #     for j in range(Nx):
-    #         for k in range(Ny):
-    #             for l in range(Nx):
-    #                 mat[i, j, k, l] = Dt1[i, k] * Rx2[l, j] + Iy[i, k] * Rx2[l, j] * Uxr[i, j] + Ur[i, j] * Iy[i, k] * Rx1[l, j] - nu * Iy[i, k] * Hx[l, j]
-    # mat = mat.reshape(Nx*Ny, Nx*Ny, order='F') # Tested to be equivilent to kron product kron(B.T, A)
-    # took1 = time.time() - start
-    # start = time.time()
     mat =                                                 np.kron(Rx2.T, Dt1) + \
             np.diag(Uxr.reshape(1, Ny*Nx, order='F')[0]) @ np.kron(Rx2.T, Iy) + \
             np.diag( Ur.reshape(1, Ny*Nx, order='F')[0]) @ np.kron(Rx1.T, Iy) - \
                                                       nu * np.kron(Hx.T , Iy)
-    # took2 = time.time() - start
-    # print('maxdiff',np.max(np.abs(mat-mat2)), 'took1, took2', took1, took2)
-    # solvec1 = np.linalg.solve(mat1, f.reshape(My2*Mx2, 1, order='F'))
-    # sol1 = solvec1.reshape(My2, Mx2, order='F')
 
     RHS = Ur * Uxr + RHSconst
     RHS = RHS.reshape(Nx * Ny, 1, order='F') # correct way!
@@ -125,11 +97,10 @@ def get_A(Nx, Ny, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr):
 
 if __name__ == '__main__':
     J = 3
-    X, T, U = hw_2d_burgers(J, nu=1/(10*np.pi), Jy=3)
+    X, T, U = hw_2d_burgers(J, nu=1/(100*np.pi), Jy=4, nua=.8)
     from matplotlib import pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     ax = Axes3D(plt.gcf())
     ax.plot_surface(X, T, U)
-    # plt.pcolormesh(X, T, U)
-    # plt.colorbar()
+    ax.set_zlim(0,1)
     plt.show()
