@@ -2,10 +2,55 @@
 import sys
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
+import os.path
 import mpmath as mp
 import numpy as np
 from scipy.special import iv
 from utils.reprint import reprint
+from scipy.io import savemat, loadmat
+
+class BVGetter:
+    __cacheFile = 'bessel_cache.mat'
+    __cache = {}
+    ccalc, ceps, cl, cu0, cinfty = None, None, None, None, None
+    cbv = None
+
+    def __init__(self):
+        if os.path.isfile(self.__cacheFile):
+            inD = loadmat(self.__cacheFile)
+            for key in inD.keys():
+                fkey = None
+                try:
+                    fkey = float(key)
+                except ValueError:
+                    continue
+                if fkey is not None:
+                    self.__cache[float(key)] = [mp.mpf(el) for el in inD[key].flatten()]
+
+    def get_bv(self, calc, eps, l, u0, infty):
+        R = float(u0 * l / (2 * np.pi * eps))
+        if R in self.__cache:
+            bv = self.__cache[R]
+            existing = len(bv)
+            if (existing < infty):
+                bv += [calc.besseli(n, R) for n in range(existing, infty)]
+                self.__cache[R] = bv
+                self.save()
+            elif infty < existing:
+                bv = bv[:infty]
+        else:
+            bv = [calc.besseli(n, R) for n in range(infty)]
+            self.__cache[R] = bv
+            self.save()
+        return np.array(bv)
+    
+    def save(self):
+        saveDict = {}
+        for key in self.__cache:
+            saveDict[str(key)] = [str(el) for el in self.__cache[key]]
+        savemat(self.__cacheFile, saveDict)
+    
+bvGetter = BVGetter()
 
 def get_bv(eps, l, u0, infty):
     return np.array([iv(n, u0 * l / (2 * np.pi * eps)) for n in range(infty)])
@@ -14,7 +59,7 @@ def get_bv_(calc, eps, l, u0, infty):
     if calc is np:
         return get_bv(eps, l, u0, infty)
     if calc is mp:
-        return np.array([calc.besseli(n, u0 * l / (2 * np.pi * eps)) for n in range(infty)])
+        return bvGetter.get_bv(calc, eps, l, u0, infty)
 
 def exact_new_mp(xv, tv, eps, l=1, u0=1, infty=200):
     if hasattr(xv, '__len__'):
