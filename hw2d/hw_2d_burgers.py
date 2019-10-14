@@ -71,7 +71,7 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
     mDiff = 1e10
     # eqDiff = 1e10
     while r < rMax and (mDiff > tol):# or eqDiff > tol):
-        print('r=%d\tmDiff=%12.9g\tEQdiff:%g'%(r, mDiff, eqDiff))
+        print('r=%d\tmDiff=%12.9g\tEQdiff:%g'%(r, mDiff))#, eqDiff))
         A = get_A(Mx2, My2, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr)
         Ucur = np.dot(A, Rx2)
         mDiff = np.max(np.abs(Ucur - Ur))
