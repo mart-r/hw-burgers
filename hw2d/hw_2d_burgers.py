@@ -59,9 +59,15 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
     u0xx = - np.pi**2 * np.sin(np.pi*X)
 
     # constants
-    Rx2 = Px2 - np.dot(Px2_1, X)
-    Rx1 = Px1 - np.dot(Px2_1, Ex)
-    Dt1 = np.linalg.lstsq(Pt1, Ht)[0].T
+    if bHO:
+        Rx2 = Px4 - Px4_1 @ X + Px2_1 @ ((X - X3)/6)
+        Rx1 = Px3 - Px4_1 @ Ex+ Px2_1 @ ((1 - 3*X2)/6)
+        Rx0 = Px2 -           + Px2_1 @ (-X)
+    else:
+        Rx2 = Px2 - np.dot(Px2_1, X)
+        Rx1 = Px1 - np.dot(Px2_1, Ex)
+        Rx0 = Hx
+        Dt1 = np.linalg.lstsq(Pt1, Ht)[0].T
     # RHSconst = np.dot(Dt1, np.dot(Et, u0))
     RHSconst = 0
 
@@ -78,8 +84,8 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
     eqDiff = 0
     while r < rMax and (mDiff > tol):# or eqDiff > tol):
         print('r=%d\tmDiff=%12.9g\tEQdiff:%g'%(r, mDiff, eqDiff))
-        # A = get_A(Mx2, My2, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr)
-        A = get_A_new(Mx2, My2, nu, Rx2, Rx1, Hx, Ht, Pt1, RHSconst, Ur, Uxr, U0, U0x, U0xx)
+        # A = get_A(Mx2, My2, nu, Rx2, Rx1, Rx0, Dt1, RHSconst, Ur, Uxr)
+        A = get_A_new(Mx2, My2, nu, Rx2, Rx1, Rx0, Ht, Pt1, RHSconst, Ur, Uxr, U0, U0x, U0xx)
         # Ucur = np.dot(A, Rx2)
         Ucur = Pt1.T @ A @ Rx2 + U0
         mDiff = np.max(np.abs(Ucur - Ur))
@@ -89,7 +95,9 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
 
         # ut = Dt1 @ Ur
         # uxx = A @ Hx
-        # eqLeft = ut + Ur * Uxr - nu * uxx
+        ut = Ht.T   @ A @ Rx2
+        uxx = Pt1.T @ A @ Hx + U0xx
+        eqLeft = ut + Ur * Uxr - nu * uxx
         # from matplotlib import pyplot as plt
         # from mpl_toolkits.mplot3d import Axes3D
         # ax = Axes3D(plt.figure(1))
@@ -103,16 +111,21 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
         # ax = Axes3D(plt.figure(5))
         # ax.plot_surface(X, T, eqLeft)
         # plt.show()
-        # eqDiff = np.max(np.abs(eqLeft))
+        eqDiff = np.max(np.abs(eqLeft))
         r += 1
+    # from matplotlib import pyplot as plt
+    # from mpl_toolkits.mplot3d import Axes3D
+    # ax = Axes3D(plt.figure(3))
+    # ax.plot_surface(X, T, Ur)
+    # plt.show()
     return X, T, Ur
 
 
-def get_A_new(Nx, Ny, nu, Rx2, Rx1, Hx, Ht, Pt1, RHSconst, Ur, Uxr, u0, u0x, u0xx):
+def get_A_new(Nx, Ny, nu, Rx2, Rx1, Rx0, Ht, Pt1, RHSconst, Ur, Uxr, u0, u0x, u0xx):
     mat =                                                  np.kron(Rx2.T, Ht.T ) + \
             np.diag(Uxr.reshape(1, Ny*Nx, order='F')[0]) @ np.kron(Rx2.T, Pt1.T) + \
             np.diag(Ur .reshape(1, Ny*Nx, order='F')[0]) @ np.kron(Rx1.T, Pt1.T) - \
-                                                      nu * np.kron(Hx.T , Pt1.T)
+                                                      nu * np.kron(Rx0.T, Pt1.T)
     RHS = Ur * Uxr - Uxr * u0 - Ur * u0x + nu * u0xx
     RHS += RHSconst
     RHS = RHS.reshape(Nx * Ny, 1, order='F') # correct way!
