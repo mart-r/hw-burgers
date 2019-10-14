@@ -69,13 +69,32 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
 
     r = 0
     mDiff = 1e10
-    while r < rMax and mDiff > tol:
-        print('r=%d\tmDiff=%12.9g'%(r, mDiff))
+    # eqDiff = 1e10
+    while r < rMax and (mDiff > tol):# or eqDiff > tol):
+        print('r=%d\tmDiff=%12.9g\tEQdiff:%g'%(r, mDiff, eqDiff))
         A = get_A(Mx2, My2, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr)
         Ucur = np.dot(A, Rx2)
         mDiff = np.max(np.abs(Ucur - Ur))
         Ur = Ucur
         Uxr = np.dot(A, Rx1)
+
+        # ut = Dt1 @ Ur
+        # uxx = A @ Hx
+        # eqLeft = ut + Ur * Uxr - nu * uxx
+        # from matplotlib import pyplot as plt
+        # from mpl_toolkits.mplot3d import Axes3D
+        # ax = Axes3D(plt.figure(1))
+        # ax.plot_surface(X, T, ut)
+        # ax = Axes3D(plt.figure(2))
+        # ax.plot_surface(X, T, Ur)
+        # ax = Axes3D(plt.figure(3))
+        # ax.plot_surface(X, T, Uxr)
+        # ax = Axes3D(plt.figure(4))
+        # ax.plot_surface(X, T, uxx)
+        # ax = Axes3D(plt.figure(5))
+        # ax.plot_surface(X, T, eqLeft)
+        # plt.show()
+        # eqDiff = np.max(np.abs(eqLeft))
         r += 1
     return X, T, Ur
 
