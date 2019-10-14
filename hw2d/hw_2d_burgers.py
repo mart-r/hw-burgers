@@ -56,27 +56,36 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
     # initial condition
     u0 = np.sin(np.pi*X)
     u0x = np.pi*np.cos(np.pi*X)
+    u0xx = - np.pi**2 * np.sin(np.pi*X)
 
     # constants
     Rx2 = Px2 - np.dot(Px2_1, X)
     Rx1 = Px1 - np.dot(Px2_1, Ex)
     Dt1 = np.linalg.lstsq(Pt1, Ht)[0].T
-    RHSconst = np.dot(Dt1, np.dot(Et, u0))
+    # RHSconst = np.dot(Dt1, np.dot(Et, u0))
+    RHSconst = 0
 
     # initial guess
     Ur = np.dot(Et, u0)
     Uxr = np.dot(Et, u0x)
+    #
+    U0 = Ur
+    U0x = Uxr
+    U0xx = np.dot(Et, u0xx)
 
     r = 0
     mDiff = 1e10
-    # eqDiff = 1e10
+    eqDiff = 0
     while r < rMax and (mDiff > tol):# or eqDiff > tol):
-        print('r=%d\tmDiff=%12.9g\tEQdiff:%g'%(r, mDiff))#, eqDiff))
-        A = get_A(Mx2, My2, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr)
-        Ucur = np.dot(A, Rx2)
+        print('r=%d\tmDiff=%12.9g\tEQdiff:%g'%(r, mDiff, eqDiff))
+        # A = get_A(Mx2, My2, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr)
+        A = get_A_new(Mx2, My2, nu, Rx2, Rx1, Hx, Ht, Pt1, RHSconst, Ur, Uxr, U0, U0x, U0xx)
+        # Ucur = np.dot(A, Rx2)
+        Ucur = Pt1.T @ A @ Rx2 + U0
         mDiff = np.max(np.abs(Ucur - Ur))
         Ur = Ucur
-        Uxr = np.dot(A, Rx1)
+        # Uxr = np.dot(A, Rx1)
+        Uxr = Pt1.T @ A @ Rx1 + U0x
 
         # ut = Dt1 @ Ur
         # uxx = A @ Hx
@@ -97,6 +106,18 @@ def hw_2d_burgers(Jx, nu, nua=1, bHO=False, bfindExact=True, tf=1/2, u0i=1, L=1,
         # eqDiff = np.max(np.abs(eqLeft))
         r += 1
     return X, T, Ur
+
+
+def get_A_new(Nx, Ny, nu, Rx2, Rx1, Hx, Ht, Pt1, RHSconst, Ur, Uxr, u0, u0x, u0xx):
+    mat =                                                  np.kron(Rx2.T, Ht.T ) + \
+            np.diag(Uxr.reshape(1, Ny*Nx, order='F')[0]) @ np.kron(Rx2.T, Pt1.T) + \
+            np.diag(Ur .reshape(1, Ny*Nx, order='F')[0]) @ np.kron(Rx1.T, Pt1.T) - \
+                                                      nu * np.kron(Hx.T , Pt1.T)
+    RHS = Ur * Uxr - Uxr * u0 - Ur * u0x + nu * u0xx
+    RHS += RHSconst
+    RHS = RHS.reshape(Nx * Ny, 1, order='F') # correct way!
+    Uvec = np.linalg.lstsq(mat, RHS)[0]
+    return Uvec.reshape(Ny, Nx, order='F') # correct way!
 
 
 def get_A(Nx, Ny, nu, Rx2, Rx1, Hx, Dt1, RHSconst, Ur, Uxr):
