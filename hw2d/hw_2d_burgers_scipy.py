@@ -15,6 +15,7 @@ from utils.nonuniform_grid import nonuniform_grid
 from hwbasics.HwBasics import Pn_nu, Pnx_nu, Hm_nu
 from utils.reprint import reprint
 from utils.init_utils import get_X_up_to_power, get_H_and_P
+from utils.utils import save
 
 # exact
 from utils.burgers_exact import exact_new_mp as exact
@@ -65,6 +66,7 @@ class Solver:
     # last known
     lastSol = None
     lastResidual = None
+    bHO = False
     
     def __init__(self, nu, tf, Jx, nua=1, Jt=None):
         if Jt is None:
@@ -125,7 +127,7 @@ class Solver:
         self.lastSol = sol
         self.lastResidual = res
 
-    def solve(self,):
+    def solve(self, bFindExact=True):
         # guess = np.linalg.lstsq(self.Pt1.T, np.linalg.lstsq(self.Rx2.T, self.U0.T)[0].T)[0]
         # sol = newton_krylov(self.residual, guess, verbose=1)
         # print (sol)
@@ -143,10 +145,47 @@ class Solver:
         ax.plot_surface(self.X, self.T, sol)
         plt.show()
         print('Residual:', np.max(np.abs(self.residual_u(sol))))
+        U = sol
+        infty = 200
+        saveName = "hw2d_burgers_newton_krylov_Jx=%d_Jt=%d_nu=%f_tf=%f_nua=%f%s"%(self.Jx, self.Jt, self.nu, self.tf, self.nua, "_HO" if self.bHO else "")
 
+        if bFindExact:
+            if self.nu < 1/100:
+                import mpmath
+                mpmath.mp.dps = 800
+                infty = 800
+            from higherlevel.hw_euler_burgers import get_exact
+            # Ue = exact(self.X.flatten(), np.array(self.T.flatten()), self.nu, infty=infty).T
+            Ue = get_exact(self.nu, self.X, np.array(self.T.flatten())).T
+            save(saveName, X=self.X, T=self.T, U=U, Ue=Ue, Jx=self.Jx, Jt=self.Jt, nu=self.nu, nua=self.nua)
+            return self.X, self.T, U, Ue
+        else:
+            save(saveName, X=self.X, T=self.T, U=U       , Jx=self.Jx, Jt=self.Jt, nu=self.nu, nua=self.nua)
+            return self.X, self.T, U
 
 
 if __name__ == '__main__':
+    tol = 1e-3 # can be changed!
     solver = Solver(1/(100*np.pi), .5, 5, nua=.95, Jt=3)
     # solver = Solver(1/(10), .5, 3)
-    solver.solve()
+    X, T, U, Ue = solver.solve()
+    print('max diff', np.max(np.abs(U-Ue)))
+    from matplotlib import pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    ax = Axes3D(plt.figure(1))
+    ax.plot_surface(X, T, U)
+    ax = Axes3D(plt.figure(2))
+    ax.plot_surface(X, T, Ue)
+    ax.set_zlim((0,1))
+    ax = Axes3D(plt.figure(3))
+    ax.plot_surface(X, T, U - Ue)
+    am = np.argmax(np.abs(U - Ue) > tol, 0)
+    am = am[am != 0]
+    if (len(am) == 0):
+        itf = len(T) -1
+    else:
+        itf = np.min(am)
+    tfr = T[itf]
+    print ('tol %g until tf=%g'%(tol, tfr))
+
+    plt.show()
