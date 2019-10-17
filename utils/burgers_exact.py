@@ -17,6 +17,8 @@ class BVGetter:
 
     def __init__(self):
         if os.path.isfile(self.__cacheFile):
+            oldDps = mp.mp.dps
+            mp.mp.dps = 800
             inD = loadmat(self.__cacheFile)
             for key in inD.keys():
                 fkey = None
@@ -25,7 +27,8 @@ class BVGetter:
                 except ValueError:
                     continue
                 if fkey is not None:
-                    self.__cache[float(key)] = [mp.mpf(el) for el in inD[key].flatten()]
+                    self.__cache[fkey] = [mp.mpf(el) for el in inD[key].flatten()]
+            mp.mp.dps = oldDps
 
     def get_bv(self, calc, eps, l, u0, infty):
         R = float(u0 * l / (2 * np.pi * eps))
