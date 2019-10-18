@@ -7,9 +7,7 @@ if sys.version_info[0] < 3:
 
 def nonuniform_grid(J, a, bOld=False):
     """
-    X = nonuniform_grid(J, a, bFixEnd)
-    - Get the collocation points (X)
-    [X, Xg] = nonuniform_grid(J, a, bFixEnd)
+    X, Xg = nonuniform_grid(J, a, bOld=False)
     - Get the collocation points (X) as well as the grid points (Xg)
     Get the nonuniform grid for a certain resolution
     J: resolution
