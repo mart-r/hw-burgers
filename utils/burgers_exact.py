@@ -75,11 +75,13 @@ def exact_new_(calc, xv, tv, eps, l=1, u0=1, infty=200):
     if calc is mp:
         if hasattr(xv, '__len__'):
             bxv = isinstance(xv[0], mp.mpf)
+            xv = np.array([mp.mpf(el) for el in xv]).reshape(xv.shape)
         else:
             bxv = isinstance(xv, mp.mpf)
             xv = mp.mpf(xv)
         if hasattr(tv, '__len__'):
             btv = isinstance(tv[0], mp.mpf)
+            tv = np.array([mp.mpf(el) for el in tv]).reshape(tv.shape)
         else:
             btv = isinstance(tv, mp.mpf)
             tv = mp.mpf(tv)
