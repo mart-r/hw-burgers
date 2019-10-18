@@ -27,8 +27,8 @@ class Solver:
     nu = None
     tf = None
     # Coordinates
-    nua = None
     #x
+    nuax = None
     Jx = None
     Mx = None
     Mx2 = None
@@ -36,6 +36,7 @@ class Solver:
     X = None
     Xg = None
     #t
+    nuat = None
     Jt = None
     Mt = None
     Mt2 = None
@@ -68,24 +69,25 @@ class Solver:
     lastResidual = None
     bHO = False
     
-    def __init__(self, nu, tf, Jx, nua=1, Jt=None):
+    def __init__(self, nu, tf, Jx, nuax=1, nuat=1, Jt=None):
         if Jt is None:
             Jt = Jx
         # equation
         self.nu = nu
         self.tf = tf
         # coordinates
-        self.nua = nua
         #x
+        self.nuax = nuax
         self.Jx = Jx
         self.Mx = 2**Jx
         self.Mx2 = 2 * self.Mx
-        self.Ex, self.X, self.Xg = get_X_up_to_power(Jx, nua, 1, bGet0=True)
+        self.Ex, self.X, self.Xg = get_X_up_to_power(Jx, nuax, 1, bGet0=True)
         #y
+        self.nuat = nuat
         self.Jt = Jt
         self.Mt = 2**Jt
         self.Mt2 = 2 * self.Mt
-        self.Et, self.T, self.Tg = get_X_up_to_power(Jt, nua, 1, bGet0=True) # avoid Tg (grid version)
+        self.Et, self.T, self.Tg = get_X_up_to_power(Jt, nuat, 1, bGet0=True) # avoid Tg (grid version)
         self.T *= self.tf
         self.Tg *= self.tf
         self.T = self.T.T
@@ -134,7 +136,7 @@ class Solver:
         # print('Residual:', np.max(np.abs(self.residual(sol))))
         guess = self.U0
         try:
-            sol = newton_krylov(self.residual_u, guess, verbose=1, maxiter=1000, callback=self.set_last)
+            sol = newton_krylov(self.residual_u, guess, verbose=1, maxiter=2000, callback=self.set_last)
         except NoConvergence:
             print ("Didn't quite work, but let's see what we've got!", np.shape(self.lastSol), np.shape(self.lastResidual))
             sol = self.lastSol.reshape(self.Mt2, self.Mx2)
@@ -147,26 +149,27 @@ class Solver:
         print('Residual:', np.max(np.abs(self.residual_u(sol))))
         U = sol
         infty = 200
-        saveName = "hw2d_burgers_newton_krylov_Jx=%d_Jt=%d_nu=%f_tf=%f_nua=%f%s"%(self.Jx, self.Jt, self.nu, self.tf, self.nua, "_HO" if self.bHO else "")
+        saveName = "hw2d_burgers_newton_krylov_Jx=%d_Jt=%d_nu=%f_tf=%f_nuax=%f_nuat=%f%s"%(
+                        self.Jx, self.Jt, self.nu, self.tf, self.nuax, self.nuat, "_HO" if self.bHO else "")
 
         if bFindExact:
             if self.nu < 1/100:
                 import mpmath
                 mpmath.mp.dps = 800
                 infty = 800
-            from higherlevel.hw_euler_burgers import get_exact
-            # Ue = exact(self.X.flatten(), np.array(self.T.flatten()), self.nu, infty=infty).T
-            Ue = get_exact(self.nu, self.X, np.array(self.T.flatten())).T
-            save(saveName, X=self.X, T=self.T, U=U, Ue=Ue, Jx=self.Jx, Jt=self.Jt, nu=self.nu, nua=self.nua)
+            # from higherlevel.hw_euler_burgers import get_exact
+            Ue = exact(self.X.flatten(), np.array(self.T.flatten()), self.nu, infty=infty).T
+            # Ue = get_exact(self.nu, self.X, np.array(self.T.flatten())).T
+            save(saveName, X=self.X, T=self.T, U=U, Ue=Ue, Jx=self.Jx, Jt=self.Jt, nu=self.nu, nuax=self.nuax, nuat=self.nuat)
             return self.X, self.T, U, Ue
         else:
-            save(saveName, X=self.X, T=self.T, U=U       , Jx=self.Jx, Jt=self.Jt, nu=self.nu, nua=self.nua)
+            save(saveName, X=self.X, T=self.T, U=U       , Jx=self.Jx, Jt=self.Jt, nu=self.nu, nuax=self.nuax, nuat=self.nuat)
             return self.X, self.T, U
 
 
 if __name__ == '__main__':
     tol = 1e-3 # can be changed!
-    solver = Solver(1/(100*np.pi), .5, 5, nua=.95, Jt=3)
+    solver = Solver(1/(100*np.pi), .5, 3, nuax=.75, nuat=0.9, Jt=4)
     # solver = Solver(1/(10), .5, 3)
     X, T, U, Ue = solver.solve()
     print('max diff', np.max(np.abs(U-Ue)))
