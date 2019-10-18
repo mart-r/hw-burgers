@@ -14,6 +14,7 @@ from hwbasics.HwBasics import Pn_nu, Pnx_nu, Hm_nu
 
 def get_X_up_to_power(J, nua=1, mpow=1, bGet0=False):
     X, Xg = nonuniform_grid(J, nua)
+    X = X.reshape(1, 2*2**J)
     ret = [X]
     i = 2
     while i <= mpow:
@@ -27,6 +28,7 @@ def get_X_up_to_power(J, nua=1, mpow=1, bGet0=False):
 
 
 def get_H_and_P(X, Xg, use=(1, 2, '2b')):
+    X = X.flatten()
     H = Hm_nu(Xg)
     Ps = []
     J = int(np.log2(len(X)/2))
