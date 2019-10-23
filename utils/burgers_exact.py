@@ -48,10 +48,13 @@ class BVGetter:
         return np.array(bv)
     
     def save(self):
+        oldDps = mp.mp.dps
+        mp.mp.dps = 800
         saveDict = {}
         for key in self.__cache:
             saveDict[str(key)] = [str(el) for el in self.__cache[key]]
         savemat(self.__cacheFile, saveDict)
+        mp.mp.dps = oldDps
     
 bvGetter = BVGetter()
 
