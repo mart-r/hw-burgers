@@ -21,7 +21,7 @@ from utils.burgers_exact import exact_new_mp as exact
 from getpass import getuser
 
 
-def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=False, nua=1, bFindExact=True):
+def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=False, hos=1, nua=1, bFindExact=True):
     M = 2**J
     M2 = 2 * M
 
@@ -37,6 +37,13 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
         P3 = Pn_nu(J, 3, Xg, X)
         P4_1 = Pnx_nu(J, 4, L, Xg).reshape(M2, 1)
         P3_1 = Pnx_nu(J, 3, L, Xg).reshape(M2, 1)
+        if hos >= 2:
+            P6 = Pn_nu(J, 6, Xg, X)
+            P5 = Pn_nu(J, 5, Xg, X)
+            P6_1 = Pnx_nu(J, 6, L, Xg).reshape(M2, 1)
+            P5_1 = Pnx_nu(J, 5, L, Xg).reshape(M2, 1)
+        elif hos >= 3:
+            raise Exception("Not implemented!")
 
     P2 = Pn_nu(J, 2, Xg, X)
     P1 = Pn_nu(J, 1, Xg, X)
@@ -56,9 +63,22 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
         # mat = P4 - P4_1 @ X + 1/6 * P2_1 @ (X - X3)
         # mat1 = P3 - P4_1 + 1/6 * P2_1 @ (1 - 3 * X2)
         # mat2 = P2 - P2_1 @ X
-        mat = P4 - np.dot(P4_1, X) + 1/6 * np.dot(P2_1, X - X3)
-        mat1 = P3 - P4_1 + 1/6 * np.dot(P2_1, 1 - 3 * X2)
-        mat2 = P2 - np.dot(P2_1, X)
+        if hos == 1:
+            mat = P4 - np.dot(P4_1, X) + 1/6 * np.dot(P2_1, X - X3)
+            mat1 = P3 - P4_1 + 1/6 * np.dot(P2_1, 1 - 3 * X2)
+            mat2 = P2 - np.dot(P2_1, X)
+        elif hos == 2:
+            c1 =  - P6_1
+            c2 = P1_1 * 0
+            c3 = 1/6 * (-6 * P4_1 + P2_1)
+            c4 = P1_1 * 0
+            c5 = 1/360 * (-360 * P6_1 - 60 * P4_1 - 7 * P2_1)
+            c6 = P1_1 * 0
+            mat = P6 + c1 @ (X**5)/120 + c2 @ (X**4)/24 + c3 @ (X**3)/6 + c4 @ (X**2)/2 + c5 @ X + c6 @ E
+            mat1 = P5 + c1 @ (X**4)/24 + c2 @ (X**3)/6  + c3 @ (X**2)/2 + c4 @ X        + c5 @ E
+            mat2 = P4 + c1 @ (X**3)/6  + c2 @ (X**2)/2  + c3 @ X        + c4 @ E
+        else:
+            raise Exception("Not implemented!")
     else:
         # mat = P2 - P2_1 @ X
         mat = P2 - np.dot(P2_1, X)
@@ -140,7 +160,7 @@ def saver(fileName, X, T, U, Ue):
 
 if __name__ == '__main__':
     print('starting')
-    [X, T, U, Ue] = hw_euler_burgers_newest(4, nu=1/(100 * np.pi), bHO=True, nua=.75)
+    [X, T, U, Ue] = hw_euler_burgers_newest(4, nu=1/(100 * np.pi), bHO=False, hos=1, nua=1)
     plot_results(X, T, U, Ue, bShow=False)
     fileName = "HW_Burgers_test"
     saver(fileName, X, T, U, Ue)
