@@ -5,6 +5,9 @@ import sys
 # integration
 from scipy.integrate import ode
 
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
+
 # my "package"
 sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
 # my stuff
@@ -59,7 +62,7 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
     else:
         # mat = P2 - P2_1 @ X
         mat = P2 - np.dot(P2_1, X)
-        mat1 = P1 - P2_1
+        mat1 = P1 - np.dot(P2_1, E)
         mat2 = H
 
     # in cluster or not
@@ -137,7 +140,7 @@ def saver(fileName, X, T, U, Ue):
 
 if __name__ == '__main__':
     print('starting')
-    [X, T, U, Ue] = hw_euler_burgers_newest(2, nu=1/(100 * np.pi), bHO=True, nua=.75)
+    [X, T, U, Ue] = hw_euler_burgers_newest(4, nu=1/(100 * np.pi), bHO=True, nua=.75)
     plot_results(X, T, U, Ue, bShow=False)
     fileName = "HW_Burgers_test"
     saver(fileName, X, T, U, Ue)
