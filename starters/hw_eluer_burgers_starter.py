@@ -37,8 +37,8 @@ def parse_bool(argIn):
 
 
 def parse_arguments(args):
-    _usage1 = 'arguments:    J            nu          tf     bHO    nua'
-    _usage2 = 'arg types: INT:INT FLOAT:FLOAT:FLOAT FLOAT BOOL/INT FLOAT'
+    _usage1 = 'arguments:    J            nu          tf     bHO    nua    bFindExact'
+    _usage2 = 'arg types: INT:INT FLOAT,FLOAT,FLOAT FLOAT BOOL/INT FLOAT    BOOL/INT'
     _usage = _usage1 + '\n' + _usage2
     # defaults
     tf = 1/2
