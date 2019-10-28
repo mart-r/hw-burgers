@@ -42,7 +42,12 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
             P5 = Pn_nu(J, 5, Xg, X)
             P6_1 = Pnx_nu(J, 6, L, Xg).reshape(M2, 1)
             P5_1 = Pnx_nu(J, 5, L, Xg).reshape(M2, 1)
-        elif hos >= 3:
+        if hos >= 3:
+            P8 = Pn_nu(J, 8, Xg, X)
+            P7 = Pn_nu(J, 7, Xg, X)
+            P8_1 = Pnx_nu(J, 8, L, Xg).reshape(M2, 1)
+            P7_1 = Pnx_nu(J, 7, L, Xg).reshape(M2, 1)
+        elif hos >= 4:
             raise Exception("Not implemented!")
 
     P2 = Pn_nu(J, 2, Xg, X)
@@ -68,15 +73,29 @@ def hw_euler_burgers_newest(J, nu=1/10, tf=1/2, summax=200, u0i=1, L=1, bHO=Fals
             mat1 = P3 - P4_1 + 1/6 * np.dot(P2_1, 1 - 3 * X2)
             mat2 = P2 - np.dot(P2_1, X)
         elif hos == 2:
-            c1 =  - P6_1
+            print('\n\n\ns=2\n\n\n')
+            c1 =  - P2_1
             c2 = P1_1 * 0
             c3 = 1/6 * (-6 * P4_1 + P2_1)
             c4 = P1_1 * 0
-            c5 = 1/360 * (-360 * P6_1 - 60 * P4_1 - 7 * P2_1)
+            c5 = 1/360 * (-360 * P6_1 + 60 * P4_1 - 7 * P2_1)
             c6 = P1_1 * 0
-            mat = P6 + c1 @ (X**5)/120 + c2 @ (X**4)/24 + c3 @ (X**3)/6 + c4 @ (X**2)/2 + c5 @ X + c6 @ E
-            mat1 = P5 + c1 @ (X**4)/24 + c2 @ (X**3)/6  + c3 @ (X**2)/2 + c4 @ X        + c5 @ E
-            mat2 = P4 + c1 @ (X**3)/6  + c2 @ (X**2)/2  + c3 @ X        + c4 @ E
+            mat  = P6 + c1 @ (X**5)/120 + c2 @ (X**4)/24 + c3 @ (X**3)/6 + c4 @ (X**2)/2 + c5 @ X + c6 @ E
+            mat1 = P5 + c1 @ (X**4)/24  + c2 @ (X**3)/6  + c3 @ (X**2)/2 + c4 @ X        + c5 @ E
+            mat2 = P4 + c1 @ (X**3)/6   + c2 @ (X**2)/2  + c3 @ X        + c4 @ E
+        elif hos == 3:
+            print('\n\n\ns=3\n\n\n')
+            c1 =  - P2_1
+            c2 = P1_1 * 0
+            c3 = 1/6 * (-6 * P4_1 + P2_1)
+            c4 = P1_1 * 0
+            c5 = 1/360 * (-360 * P6_1 + 60 * P4_1 - 7 * P2_1)
+            c6 = P1_1 * 0
+            c7 = 1/15120 * (-15120 * P8_1 + 2520 * P6_1 - 294 * P4_1 + 31 * P2_1)
+            c8 = P1_1 * 0
+            mat  = P8 + c1 @ (X**7)/5040 + c2 @ (X**6)/720 + c3 @ (X**5)/120 + c4 @ (X**4)/24 + c5 @ (X**3)/6 + c6 @ (X**2)/2 + c7 @ X + c8 @ E
+            mat1 = P7 + c1 @ (X**6)/720  + c2 @ (X**5)/120 + c3 @ (X**4)/24  + c4 @ (X**3)/6  + c5 @ (X**2)/2 + c6 @ X        + c7 @ E
+            mat2 = P6 + c1 @ (X**5)/120  + c2 @ (X**4)/24  + c3 @ (X**3)/6   + c4 @ (X**2)/2  + c5 @ X        + c6 @ E
         else:
             raise Exception("Not implemented!")
     else:
@@ -160,7 +179,7 @@ def saver(fileName, X, T, U, Ue):
 
 if __name__ == '__main__':
     print('starting')
-    [X, T, U, Ue] = hw_euler_burgers_newest(4, nu=1/(100 * np.pi), bHO=False, hos=1, nua=1)
+    [X, T, U, Ue] = hw_euler_burgers_newest(4, nu=1/(100 * np.pi), bHO=True, hos=2, nua=.8)
     plot_results(X, T, U, Ue, bShow=False)
     fileName = "HW_Burgers_test"
     saver(fileName, X, T, U, Ue)
