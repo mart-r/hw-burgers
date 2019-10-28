@@ -37,12 +37,13 @@ def parse_bool(argIn):
 
 
 def parse_arguments(args):
-    _usage1 = 'arguments:    J            nu          tf     bHO    nua    bFindExact'
-    _usage2 = 'arg types: INT:INT FLOAT,FLOAT,FLOAT FLOAT BOOL/INT FLOAT    BOOL/INT'
+    _usage1 = 'arguments:    J            nu          tf     bHO    nua    bFindExact    hos'
+    _usage2 = 'arg types: INT:INT FLOAT,FLOAT,FLOAT FLOAT BOOL/INT FLOAT    BOOL/INT     INT'
     _usage = _usage1 + '\n' + _usage2
     # defaults
     tf = 1/2
     bHO = False
+    hos = 1 # HIGHER ORDER s 
     nua = 1
     bFindExact = True
     # parse
@@ -87,8 +88,13 @@ def parse_arguments(args):
             bFindExact = float(args[5])
         except ValueError:
             bFindExact = True 
+    if nargs > 6:
+        try:
+            hos = int(args[6])
+        except ValueError:
+            hos = 1 # if needed at all
     J = range(J1, J2+1)
-    return J, nu, tf, bHO, nua, bFindExact
+    return J, nu, tf, bHO, nua, bFindExact, hos
 
 
 if __name__ == '__main__':
@@ -96,15 +102,17 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     u01 = 1 # not changing, for now at least
     L = 1   # not changing, for now at least
-    JAll, nuAll, tf, bHO, nua, bFindExact = parse_arguments(args)
+    JAll, nuAll, tf, bHO, nua, bFindExact, hos = parse_arguments(args)
     for J in JAll:
         for nu in nuAll:
-            print('J, nu, tf, bHO, nua, bFindExact')
-            print(J, nu, tf, bHO, nua, bFindExact)
-            X, T, U, Ue = solver(J, nu, tf, summax, u01, L, bHO, nua, bFindExact)
+            print('J, nu, tf, bHO, nua, bFindExact, hos')
+            print(J, nu, tf, bHO, nua, bFindExact, hos)
+            X, T, U, Ue = solver(J, nu, tf, summax, u01, L, bHO=bHO, nua=nua, bFindExact=bFindExact, hos=hos)
             fname = 'HW_Burgers_AS_J=%d_nu=%f_tf=%d_nua=%f'%(J, nu, tf, nua)
             if bHO:
                 fname += "_HO"
+                if (hos > 1):
+                    fname += "_s=%d"%hos
             fname += ".mat"
             plot_results(X, T,U ,Ue, False)
             saver(fname, X, T, U, Ue)
