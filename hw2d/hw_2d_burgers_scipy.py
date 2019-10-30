@@ -169,7 +169,7 @@ class Solver:
 
 if __name__ == '__main__':
     tol = 1e-3 # can be changed!
-    solver = Solver(1/(100*np.pi), .5, 3, nuax=.75, nuat=0.9, Jt=4)
+    solver = Solver(1/(120*np.pi), .5, 3, nuax=.75, nuat=0.9, Jt=4)
     # solver = Solver(1/(10), .5, 3)
     X, T, U, Ue = solver.solve()
     print('max diff', np.max(np.abs(U-Ue)))
