@@ -8,7 +8,7 @@ if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 
 # my "package"
-sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
+sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 # my stuff
 from utils.nonuniform_grid import nonuniform_grid
 from hwbasics.HwBasics import Pn_nu, Pnx_nu, Hm_nu

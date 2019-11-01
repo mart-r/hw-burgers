@@ -3,7 +3,7 @@
 from numpy import pi # in case you want pi (i.e in nu evaluation)
 import sys
 # my "package"
-sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
+sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 from hw2d.hw_2d_burgers import hw_2d_burgers as solver
 from higherlevel.hw_euler_burgers import saver, plot_results, get_exact
 from starters.hw_eluer_burgers_starter import parse_arguments

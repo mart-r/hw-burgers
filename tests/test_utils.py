@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, getopt
-sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
+sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 from tests.test_helpers import save

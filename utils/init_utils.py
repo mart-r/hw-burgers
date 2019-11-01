@@ -7,7 +7,7 @@ if sys.version_info[0] < 3:
 import numpy as np
 
 # my "package"
-sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
+sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 from utils.nonuniform_grid import nonuniform_grid
 from hwbasics.HwBasics import Pn_nu, Pnx_nu, Hm_nu
 

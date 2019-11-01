@@ -3,7 +3,7 @@
 import numpy as np
 import sys, getopt
 print (sys.path[0])
-sys.path.append('/home/mart/Documents/KybI/2019/python/NewPython2019Oct')
+sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 
