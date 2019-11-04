@@ -42,12 +42,12 @@ class BVGetter:
             elif infty < existing:
                 bv = bv[:infty]
         else:
-            bv = self.__get_besseli(R)
+            bv = self.__get_besseli(calc, R)
             self.__cache[R] = bv
             self.save()
         return np.array(bv)
     
-    def __get_besseli(self, R):
+    def __get_besseli(self, calc, R):
         oldDps = mp.mp.dps
         mp.mp.dps = 800
         bv = [calc.besseli(n, R) for n in range(800)]
