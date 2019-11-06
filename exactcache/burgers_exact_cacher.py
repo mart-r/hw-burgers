@@ -35,9 +35,11 @@ class BurgersExactCacher:
                 except ValueError as e:
                     print('Unable to use nu=%f'%nu)
                     print(e)
+        else:
+            print('Cache file not found, will need to generate a new one as needed (which will take time)')
     
     def __calc_exact(self, nu):
-        X = np.arange(0, 1, self.dx)
+        X = np.arange(0, 1 + self.dx, self.dx)
         T = np.arange(0, self.tf, self.dt) # TODO - calculate tf from nu
         infty = 200
         bHighDPS = nu < 0.01
@@ -76,7 +78,7 @@ class BurgersExactCacher:
     def getAt(self, nu, Xv, Tv):
         curExact = self.__getFor(nu)
         interpolant = interp2d(curExact.getX(), curExact.getT(), curExact.getU(), 'cubic')
-        return interpolant(Xv, Tv).T
+        return interpolant(Xv, Tv)
 
     def getFull(self, nu):
         curExact = self.__getFor(nu)
@@ -100,7 +102,7 @@ class BurgersExactAtNu:
         nx = max(X.shape)
         nt = max(T.shape)
         m, n = U.shape
-        if (nx != m or nt != n):
+        if (nt != m or nx != n):
             raise ValueError("Input mis-shaped!lenX:%d lenT:%d, U:(%d,%d)"%(nx, nt, m, n))
         self.__X = X
         self.__T = T
