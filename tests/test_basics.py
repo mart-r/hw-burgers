@@ -16,7 +16,7 @@ def find_P_and_save(J, n, a, outputFile):
 
 def find_Px_and_save(J, n, a, outputFile):
     from utils.nonuniform_grid import nonuniform_grid
-    X, Xg = nonuniform_grid(J, a)
+    Xg = nonuniform_grid(J, a)[1]
     from hwbasics.HwBasics import Pnx_nu
     Px = Pnx_nu(J, n, 1, Xg)
     save(outputFile, Px=Px)
@@ -24,7 +24,7 @@ def find_Px_and_save(J, n, a, outputFile):
 
 def find_H_and_save(J, n, a, outputFile):
     from utils.nonuniform_grid import nonuniform_grid
-    X, Xg = nonuniform_grid(J, a)
+    Xg = nonuniform_grid(J, a)[1]
     from hwbasics.HwBasics import Hm_nu
     H = Hm_nu(Xg)
     save(outputFile, H=H)
@@ -41,7 +41,7 @@ def parse_arguments(argv):
     doP = False
     doPx = False
     try:
-        opts, args = getopt.getopt(argv,"hj:a:n:o:px",["ofile="])
+        opts = getopt.getopt(argv,"hj:a:n:o:px",["ofile="])[0]
     except getopt.GetoptError:
         print(__usage)
         sys.exit(2)
