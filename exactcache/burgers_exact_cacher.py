@@ -15,6 +15,8 @@ sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 
 # exact
 from utils.burgers_exact import exact_new_mp as exact
+# nonuniform grid
+from utils.nonuniform_grid import nonuniform_grid
 
 class BurgersExactCacher:
     __cacheFile = 'burgers_exact_cache.mat'
@@ -39,8 +41,8 @@ class BurgersExactCacher:
             print('Cache file not found, will need to generate a new one as needed (which will take time)')
     
     def __calc_exact(self, nu):
-        X = np.arange(0, 1 + self.dx, self.dx)
-        T = np.arange(0, self.tf, self.dt) # TODO - calculate tf from nu
+        X = nonuniform_grid(8, .975)[1] # np.arange(0, 1 + self.dx, self.dx)
+        T = nonuniform_grid(8, .975)[1]*self.tf # np.arange(0, self.tf, self.dt) # TODO - calculate tf from nu
         infty = 200
         bHighDPS = nu < 0.01
         if bHighDPS:
@@ -78,7 +80,7 @@ class BurgersExactCacher:
     def getAt(self, nu, Xv, Tv):
         curExact = self.__getFor(nu)
         interpolant = interp2d(curExact.getX(), curExact.getT(), curExact.getU(), 'cubic')
-        return interpolant(Xv, Tv)
+        return interpolant(Xv, Tv).T
 
     def getFull(self, nu):
         curExact = self.__getFor(nu)
