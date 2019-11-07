@@ -97,9 +97,15 @@ def exact_new_(calc, xv, tv, eps, l=1, u0=1, infty=200):
             tv = mp.mpf(tv)
         beps = isinstance(eps, mp.mpf)
         if not bxv:
-            print('xv not mpf:', xv)
+            el = xv[0]
+            while hasattr(el, '__len__'):
+                el = el[0]
+            print('xv not mpf:', len(xv), el)
         if not btv:
-            print('tv not mpf:', tv)
+            el = tv[0]
+            while hasattr(el, '__len__'):
+                el = el[0]
+            print('tv not mpf:', el)
         if not beps:
             print('eps not mpf:', eps)
             eps = mp.mpf(eps)
