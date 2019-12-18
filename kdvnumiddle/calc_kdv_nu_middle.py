@@ -116,7 +116,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, nuStart=None, bHO=Fals
 # uinfty = 0-> c1 = c2 = c
 def get_exact(X, T, alpha, beta, c, x0=1/4):
     a, b = alpha, beta
-    return 3 * c * b / a * np.cosh(c**.5/2 * (X - c * T - x0))**(-2)
+    return 3 * c * b / a * np.cosh(c**.5/2 * (X - c * b * T - x0))**(-2)
 
 
 def fun(t, u, X, M2, alpha, beta, Dx1, Dx3):
@@ -133,10 +133,37 @@ def fun(t, u, X, M2, alpha, beta, Dx1, Dx3):
 
 if __name__ == '__main__':
     J = 7
-    X, T, U, Ue = solve_kdv(J, alpha=6, tf=.4e-3, bHO=False, x0=0.3, nuStart=None)
-    X, T, U, Ue = solve_kdv(J, alpha=6, tf=.4e-3, bHO=False, x0=0.3, nuStart=.1)
-    X, T, U, Ue = solve_kdv(J, alpha=6, tf=.4e-3, bHO=True, x0=0.3, nuStart=None)
-    X, T, U, Ue = solve_kdv(J, alpha=6, tf=.4e-3, bHO=True, x0=0.3, nuStart=.1)
-    print(U-Ue)
+    alpha = 6
+    beta = .4e-3
+    c = .5e4
+    x0 = .3
+    tf = (1-2*x0)/(beta * c)
+    print("tf", tf)
+    mStr = "J=%d,nuStart = None"%J 
+    print(mStr)
+    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, nuStart=None)
+    # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+    mStr = "J=%d,nuStart = .1"%J
+    print(mStr)
+    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, nuStart=.1)
+    # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+    mStr = "J=%d,nuStart = .2"%J
+    print(mStr)
+    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, nuStart=.2)
+    # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+    # HOHWM
+    mStr = "J=%d,HOHWM, nuStart = None"%J
+    print(mStr)
+    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, nuStart=None)
+    # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+    mStr = "J=%d,HOHWM, nuStart = .1"%J
+    print(mStr)
+    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, nuStart=.1)
+    # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+    mStr = "J=%d,HOHWM, nuStart = .2"%J
+    print(mStr)
+    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, nuStart=.2)
+    # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+    # print(U-Ue)
     # plot3D(X, T, U, bShow=False),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     # plot2D(X, get_exact(X, T[0], 6, 1, 1e3), bShow=False),plot2D(X, get_exact(X, T[-1], 6, 1, 1e3))
