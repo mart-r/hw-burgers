@@ -64,6 +64,9 @@ class DynGridHandler:
     def get_for_grid(self, i):
         return self.grids[i], self.H_and_P[i]
 
+    def get_fine_grid(self):
+        return self.Xg, self.X
+
 
 if __name__ == '__main__':
     Jf = 5
@@ -85,3 +88,7 @@ if __name__ == '__main__':
     # print(H.shape, P.shape)
     # print(H.shape, H2.shape, P.shape, P2.shape)
     print('H:', np.max(np.abs(H-H2)), 'P', np.max(np.abs(P-P2)))
+    from matplotlib import pyplot as plt
+    plt.plot(Xog, Xog*0, 'o')
+    plt.plot(Xo.flatten(), Xo.flatten()*0, 'o')
+    plt.show()
