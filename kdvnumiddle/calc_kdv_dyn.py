@@ -19,13 +19,32 @@ from utils.utils import plot2D, plot_grid, plot3D
 # cluster or not
 from getpass import getuser
 
-def get_my_grid(J, lStart, rStart, borders=1):
+def get_my_grid(J, lStart, rStart, borders=1, bSmartBorders=True):
     M2 = 2 * 2**J
-    Xg = np.linspace(0, lStart, borders + 1)
-    Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
-    Xg = np.hstack((Xg, np.linspace(rStart, 1, borders + 1)))
+    if not bSmartBorders:
+        Xg = np.linspace(0, lStart, borders + 1)
+        Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
+        Xg = np.hstack((Xg, np.linspace(rStart, 1, borders + 1)))
+    else:
+        left = lStart 
+        right = 1 - rStart
+        nrl, nrr = get_smart_grid_left_right(2 * borders, left, right)
+        Xg = np.linspace(0, lStart, nrl + 1)
+        Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
+        Xg = np.hstack((Xg, np.linspace(rStart, 1, nrr + 1)))        
     X = (Xg[1:]+Xg[:-1])/2
     return Xg, X.reshape((1, M2))
+
+def get_smart_grid_left_right(totalBorders, left, right):
+    nrl = totalBorders * left /(left  + right)
+    nrr = totalBorders * right /(left + right)
+    nrl, nrr = int(nrl), int(nrr)
+    if nrl + nrr < totalBorders:
+        if nrl/left < nrr/right:
+            nrl, nrr = nrl + 1, nrr
+        else:
+            nrl, nrr = nrl, nrr + 1
+    return nrl, nrr
     
 def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=False, widthTol=0.05, borders=1):
     M2 = 2 * 2 ** J
