@@ -82,7 +82,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=Fa
             Ps_old, Pbs_old = Ps, Pbs
             # ax = plot2D(X, r.y.flatten(), bShow=False) # old X
             # from matplotlib import pyplot as plt
-            Xg, X = get_my_grid(J, xmaxNew-fineWidth, xmaxNew+fineWidth)
+            Xg, X = get_my_grid(J, xmaxNew-fineWidth, xmaxNew+fineWidth, borders)
             # plot2D(Xg, Xg*0, type='o')
             # plot_grid(Xg, X, bShow=False)
             H_and_P = get_H_and_P(Xg, X, bHO)
@@ -223,15 +223,15 @@ if __name__ == '__main__':
     # HOHWM
     widthTol = 1/12
     fineWidth = 4/16
-    JRange = [7,]#[4, 5, 6]
+    JRange = [4, 5, 6]
     for J in JRange:
         mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
         print(mStr)
-        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol)
+        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=2)
         print(X.shape, T.shape, U.shape, Ue.shape)
         plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     for J in JRange:
         mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
         print(mStr)
-        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol)
+        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=2)
         plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
