@@ -181,15 +181,16 @@ if __name__ == '__main__':
     tf = (1-2*x0)/(beta * c)
     widthTol = 1/10
     fineWidth = 4/16
-    JRange = [4, 5, 6]
+    nrOfBorders = 1
+    JRange = [4, 5, 6, 7]
     for J in JRange:
         mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
         print(mStr)
-        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=2)
+        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
         print(X.shape, T.shape, U.shape, Ue.shape)
         plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     for J in JRange:
         mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
         print(mStr)
-        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=2)
+        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
         plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
