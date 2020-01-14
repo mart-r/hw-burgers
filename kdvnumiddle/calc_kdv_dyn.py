@@ -27,9 +27,9 @@ def get_my_grid(J, lStart, rStart, borders=1):
     X = (Xg[1:]+Xg[:-1])/2
     return Xg, X.reshape((1, M2))
     
-def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=False, widthTol=0.05):
+def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=False, widthTol=0.05, borders=1):
     M2 = 2 * 2 ** J
-    Xg, X = get_my_grid(J, x0-fineWidth, x0+fineWidth)
+    Xg, X = get_my_grid(J, x0-fineWidth, x0+fineWidth, borders)
     # plot_grid(Xg, X)
 
     u0 = get_exact(X, 0, alpha, beta, c, x0)
@@ -221,8 +221,8 @@ if __name__ == '__main__':
     # X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0)
     # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     # HOHWM
-    fineWidth = 4/16
     widthTol = 1/12
+    fineWidth = 4/16
     JRange = [7,]#[4, 5, 6]
     for J in JRange:
         mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
