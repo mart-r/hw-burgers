@@ -221,7 +221,7 @@ if __name__ == '__main__':
     # X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0)
     # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     # HOHWM
-    widthTol = 1/12
+    widthTol = 1/10
     fineWidth = 4/16
     JRange = [4, 5, 6]
     for J in JRange:
