@@ -27,12 +27,16 @@ def plot2D(*args, **kwargs):
     else:
         plt.figure()
         ax = plt.gca()
-    ax.plot(X, Y)
+    pType = "-"
+    if "type" in kwargs:
+        pType = kwargs["type"]
+    ax.plot(X, Y, pType)
     bShow = True
     if "bShow" in kwargs:
         bShow = bool(kwargs["bShow"])
     if bShow:
         plt.show()
+    return ax
 
 def plot_grid(Xg, X, **kwargs):
     if "ax" in kwargs:
@@ -44,21 +48,30 @@ def plot_grid(Xg, X, **kwargs):
     ax.plot(X.flatten(), X.flatten() * 0, 'o')
     ax = plt.gca()
     ax.legend(("Grid", "Coll."))
+    if "title" in kwargs:
+        ax.set_title(kwargs["title"])
     bShow = True
     if "bShow" in kwargs:
         bShow = bool(kwargs["bShow"])
     if bShow:
         plt.show()
 
-def plot3D(X, T, U, **kwargs):
-    X = X.flatten()
-    T = T.flatten()
+def plot3D(X, T=None, U=None, **kwargs):
+    if T is None and U is None:
+        U = X
+        X = np.arange(U.shape[1])
+        T = np.arange(U.shape[0])
+    if X.shape != T.shape:
+        X = X.flatten()
+        T = T.flatten()
+        X, T = np.meshgrid(X, T)
     if "ax" in kwargs:
         ax = kwargs["ax"]
     else:
         ax = Axes3D(plt.figure())
-    xx, tt = np.meshgrid(X, T)
-    ax.plot_surface(xx, tt, U)
+    ax.plot_surface(X, T, U)
+    if "title" in kwargs:
+        ax.set_title(kwargs["title"])
     bShow = True
     if "bShow" in kwargs:
         bShow = bool(kwargs["bShow"])
