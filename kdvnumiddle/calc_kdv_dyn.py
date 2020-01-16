@@ -19,21 +19,39 @@ from utils.utils import plot2D, plot_grid, plot3D
 # cluster or not
 from getpass import getuser
 
-def get_my_grid(J, lStart, rStart, borders=1, bSmartBorders=True):
+def get_my_grid(J, lStart, rStart, borders=1, bSmartBorders=False, bSmoothBorders=True):
     M2 = 2 * 2**J
     if not bSmartBorders:
-        Xg = np.linspace(0, lStart, borders + 1)
-        Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
-        Xg = np.hstack((Xg, np.linspace(rStart, 1, borders + 1)))
+        if bSmoothBorders:
+            Xg = get_my_smooth_borders(M2, lStart, rStart, borders)#, int(7 * M2/16))
+        else:
+            Xg = np.linspace(0, lStart, borders + 1)
+            Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
+            Xg = np.hstack((Xg, np.linspace(rStart, 1, borders + 1)))
     else:
-        left = lStart 
-        right = 1 - rStart
-        nrl, nrr = get_smart_grid_left_right(2 * borders, left, right)
+        if bSmoothBorders:
+            raise ValueError("Cannot have both smart and smooth borders(at least for now)")
+        nrl, nrr = get_smart_grid_left_right(2 * borders, lStart, 1 - rStart)
         Xg = np.linspace(0, lStart, nrl + 1)
         Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
         Xg = np.hstack((Xg, np.linspace(rStart, 1, nrr + 1)))        
     X = (Xg[1:]+Xg[:-1])/2
     return Xg, X.reshape((1, M2))
+
+def get_my_smooth_borders(M2, left, right, borders=None, midPointsHalf=None, a=.9):
+    if midPointsHalf is None and borders is None:
+        raise ValueError("Need to specify either amount of borders or midPointsHalf")
+    if midPointsHalf is None:
+        midPointsHalf = M2/2 - borders
+    mid = (left + right)/2
+    midSize = right - left
+    mXg = (a**np.arange(midPointsHalf + 1) - 1)/(a**midPointsHalf - 1) * midSize/2
+    mXg = np.hstack((mXg + mid - midSize/2, (mid + midSize/2 - mXg[::-1][1:])))
+    nrl, nrr = get_smart_grid_left_right(M2 - len(mXg) + 1, left, 1 - right)
+    lXg = np.linspace(0, left, nrl + 1)[:-1]
+    rXg = np.linspace(right, 1, nrr + 1)[1:]
+    Xg = np.hstack((lXg, mXg, rXg))      
+    return Xg
 
 def get_smart_grid_left_right(totalBorders, left, right):
     nrl = totalBorders * left /(left  + right)
@@ -100,6 +118,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=Fa
             r.set_initial_value(ucur, r.t)
             r.set_f_params(X, M2, alpha, beta, Dx1, Dx3)
             xmaxCur = xmaxNew
+    print("DONE:", toPrint)
     T = np.array(tres).reshape(len(tres), 1)
     xx, tt = np.meshgrid(np.hstack((0, X.flatten(), 1)), T)
     xx = np.array(xres)
@@ -180,17 +199,17 @@ if __name__ == '__main__':
     x0 = .3
     tf = (1-2*x0)/(beta * c)
     widthTol = 1/10
-    fineWidth = 4/16
-    nrOfBorders = 1
+    fineWidth = .3 # CHANGED
+    nrOfBorders = 2
     JRange = [4, 5, 6, 7]
     for J in JRange:
         mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
         print(mStr)
         X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
-        print(X.shape, T.shape, U.shape, Ue.shape)
-        plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+        # print(X.shape, T.shape, U.shape, Ue.shape)
+        # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     for J in JRange:
         mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
         print(mStr)
         X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
-        plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+        # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
