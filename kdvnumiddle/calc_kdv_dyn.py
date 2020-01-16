@@ -42,15 +42,34 @@ def get_my_smooth_borders(M2, left, right, borders=None, midPointsHalf=None, a=.
     if midPointsHalf is None and borders is None:
         raise ValueError("Need to specify either amount of borders or midPointsHalf")
     if midPointsHalf is None:
-        midPointsHalf = M2/2 - borders
+        midPointsHalf = int(M2/2) - borders
     mid = (left + right)/2
     midSize = right - left
     mXg = (a**np.arange(midPointsHalf + 1) - 1)/(a**midPointsHalf - 1) * midSize/2
     mXg = np.hstack((mXg + mid - midSize/2, (mid + midSize/2 - mXg[::-1][1:])))
+    belowZeros = np.sum(mXg < 0)
+    if belowZeros > 0:
+        mXg = mXg[belowZeros:]
+        mXg[0] = 0
+    afterOnes = np.sum(mXg > 1)
+    if afterOnes > 0:
+        mXg = mXg[:-afterOnes]
+        mXg[-1] = 1
     nrl, nrr = get_smart_grid_left_right(M2 - len(mXg) + 1, left, 1 - right)
-    lXg = np.linspace(0, left, nrl + 1)[:-1]
-    rXg = np.linspace(right, 1, nrr + 1)[1:]
+    if left < 0:
+        nrr += nrl
+    if right > 1:
+        nrl += nrr
+    if left < 0:
+        lXg = np.arange(0, 0)
+    else:
+        lXg = np.linspace(0, left, nrl + 1)[:-1]
+    if right > 1:
+        rXg = np.arange(0,0)
+    else:
+        rXg = np.linspace(right, 1, nrr + 1)[1:]
     Xg = np.hstack((lXg, mXg, rXg))      
+    # print(lXg.shape, mXg.shape, rXg.shape, Xg.shape)
     return Xg
 
 def get_smart_grid_left_right(totalBorders, left, right):
@@ -199,9 +218,9 @@ if __name__ == '__main__':
     x0 = .3
     tf = (1-2*x0)/(beta * c)
     widthTol = 1/10
-    fineWidth = .3 # CHANGED
+    fineWidth = .35 # CHANGED
     nrOfBorders = 2
-    JRange = [4, 5, 6, 7]
+    JRange = [4, 5, 6]
     for J in JRange:
         mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
         print(mStr)
