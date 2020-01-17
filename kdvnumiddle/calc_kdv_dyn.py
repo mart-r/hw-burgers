@@ -217,14 +217,14 @@ if __name__ == '__main__':
     c = .5e4
     x0 = .3
     tf = (1-2*x0)/(beta * c)
-    widthTol = 1/10
-    fineWidth = .35 # CHANGED
-    nrOfBorders = 2
-    JRange = [4, 5, 6]
-    for J in JRange:
-        mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
-        print(mStr)
-        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
+    widthTol = 1/25
+    fineWidth = .25
+    nrOfBorders = 1
+    JRange = [7]
+    # for J in JRange:
+    #     mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
+    #     print(mStr)
+    #     X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=False, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
         # print(X.shape, T.shape, U.shape, Ue.shape)
         # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     for J in JRange:
