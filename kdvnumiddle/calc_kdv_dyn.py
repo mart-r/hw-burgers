@@ -19,24 +19,61 @@ from utils.utils import plot2D, plot_grid, plot3D
 # cluster or not
 from getpass import getuser
 
-def get_my_grid(J, lStart, rStart, borders=1, bSmartBorders=False, bSmoothBorders=True):
+def get_my_grid(J, Xcur, lStart, rStart, ucur, uxcur, borders=1, bSmartBorders=False, bSmoothBorders=True,
+                        bDerivBorders=True):
     M2 = 2 * 2**J
-    if not bSmartBorders:
-        if bSmoothBorders:
-            Xg = get_my_smooth_borders(M2, lStart, rStart, borders)#, int(7 * M2/16))
-        else:
-            Xg = np.linspace(0, lStart, borders + 1)
-            Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
-            Xg = np.hstack((Xg, np.linspace(rStart, 1, borders + 1)))
+    if bDerivBorders:
+        Xg = get_deriv_borders(M2, Xcur, uxcur, int(M2/4) - 1, borders, 0.1)
     else:
-        if bSmoothBorders:
-            raise ValueError("Cannot have both smart and smooth borders(at least for now)")
-        nrl, nrr = get_smart_grid_left_right(2 * borders, lStart, 1 - rStart)
-        Xg = np.linspace(0, lStart, nrl + 1)
-        Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
-        Xg = np.hstack((Xg, np.linspace(rStart, 1, nrr + 1)))        
+        if not bSmartBorders:
+            if bSmoothBorders:
+                Xg = get_my_smooth_borders(M2, lStart, rStart, borders)#, int(7 * M2/16))
+            else:
+                Xg = np.linspace(0, lStart, borders + 1)
+                Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
+                Xg = np.hstack((Xg, np.linspace(rStart, 1, borders + 1)))
+        else:
+            if bSmoothBorders:
+                raise ValueError("Cannot have both smart and smooth borders(at least for now)")
+            nrl, nrr = get_smart_grid_left_right(2 * borders, lStart, 1 - rStart)
+            Xg = np.linspace(0, lStart, nrl + 1)
+            Xg = np.hstack((Xg, np.linspace(lStart, rStart, M2 - 2 * borders + 1)[1:-1]))
+            Xg = np.hstack((Xg, np.linspace(rStart, 1, nrr + 1)))        
     X = (Xg[1:]+Xg[:-1])/2
     return Xg, X.reshape((1, M2))
+
+def get_deriv_borders(M2, X, ux, Nper, borders, halfWdith, a=0.9):
+    ux = ux.flatten()
+    X = X.flatten()
+    m1 = np.max(ux) # max
+    iMax = np.where(ux == m1)[0][0]
+    m2 = np.min(ux) # min
+    iMin = np.where(ux == m2)[0][0]
+
+    nuPart = (a**np.arange(Nper + 1) - 1)/(a**Nper - 1) * halfWdith
+
+    maxPart = np.hstack((nuPart[:-1] + X[iMax] - halfWdith, X[iMax] + halfWdith - nuPart[::-1]))
+    minPart = np.hstack((nuPart[:-1] + X[iMin] - halfWdith, X[iMin] + halfWdith - nuPart[::-1]))
+
+    if iMax < iMin:
+        overlap = np.sum(minPart < maxPart[-1])
+        while overlap > 0:
+            minPart = minPart[1:]
+            maxPart = maxPart[:-1]
+            overlap = np.sum(minPart < maxPart[-1]) 
+    else:
+        raise ValueError("Not implemented case where xMin < xMax")
+    mid = np.hstack((maxPart, minPart))
+
+    left, right = mid[0], mid[-1]
+    nrl, nrr = get_smart_grid_left_right(M2 - len(mid) + 1, left, 1 - right)
+    lXg = np.linspace(0, left, nrl + 1)[:-1]
+    rXg = np.linspace(right, 1, nrr + 1)[1:]
+    
+    Xg = np.hstack((lXg, mid, rXg))
+    return Xg
+
+
 
 def get_my_smooth_borders(M2, left, right, borders=None, midPointsHalf=None, a=.9):
     if midPointsHalf is None and borders is None:
@@ -85,7 +122,12 @@ def get_smart_grid_left_right(totalBorders, left, right):
     
 def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=False, widthTol=0.05, borders=1):
     M2 = 2 * 2 ** J
-    Xg, X = get_my_grid(J, x0-fineWidth, x0+fineWidth, borders)
+    # first, get uniform grid
+    X, Xg = nonuniform_grid(J, 1)
+    u0 = get_exact(X, 0, alpha, beta, c, x0)
+    u0x = get_exact_x(X, 0, alpha, beta, c, x0)
+    # then 
+    Xg, X = get_my_grid(J, X, x0-fineWidth, x0+fineWidth, u0, u0x, borders=borders)
     # plot_grid(Xg, X)
 
     u0 = get_exact(X, 0, alpha, beta, c, x0)
@@ -129,7 +171,8 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=Fa
         if abs(xmaxNew - xmaxCur) > widthTol:
             Xog, Xo = Xg, X
             Ps_old, Pbs_old = Ps, Pbs
-            Xg, X = get_my_grid(J, xmaxNew-fineWidth, xmaxNew+fineWidth, borders)
+            uxcur = r.y.reshape(1, M2) @ Dx1
+            Xg, X = get_my_grid(J, Xo, xmaxNew-fineWidth, xmaxNew+fineWidth, r.y, uxcur, borders=borders)
             H_and_P = get_H_and_P(Xg, X, bHO)
             Ps, Pbs = H_and_P[0], H_and_P[1]
             ucur = change_grid(J, r.y, Ps_old, Pbs_old, X, Xog, Xo, R3, bHO)
@@ -200,6 +243,11 @@ def get_exact(X, T, alpha, beta, c, x0=1/4):
     a, b = alpha, beta
     return 3 * c * b / a * np.cosh(c**.5/2 * (X - c * b * T - x0))**(-2)
 
+# uinfty = 0 -> c1 = c2 = c (c * beta * t)
+def get_exact_x(X, T, alpha, beta, c, x0=1/4):
+    a, b = alpha, beta
+    return - 3 * c**(3/2.) * b / a * np.tanh(c**.5/2 * (X - c * b * T - x0)) * np.cosh(c**.5/2 * (X - c * b * T - x0))**(-2)
+
 
 def fun(t, u, X, M2, alpha, beta, Dx1, Dx3):
     u = u.reshape(1, M2)
@@ -220,7 +268,7 @@ if __name__ == '__main__':
     widthTol = 1/25
     fineWidth = .25
     nrOfBorders = 1
-    JRange = [7]
+    JRange = [4,5,6,7]
     # for J in JRange:
     #     mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
     #     print(mStr)
