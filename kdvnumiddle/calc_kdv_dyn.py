@@ -20,10 +20,11 @@ from utils.utils import plot2D, plot_grid, plot3D
 from getpass import getuser
 
 def get_my_grid(J, Xcur, lStart, rStart, ucur, uxcur, borders=1, bSmartBorders=False, bSmoothBorders=True,
-                        bDerivBorders=True):
+                        bDerivBorders=True, a=0.9):
     M2 = 2 * 2**J
     if bDerivBorders:
-        Xg = get_deriv_borders(M2, Xcur, uxcur, int(M2/4) - 1, borders, 0.1)
+        Xg = get_deriv_borders(M2, Xcur, uxcur, int(M2/4) + 1, borders, (rStart - lStart)/4,
+                a=a)#0.477513 + 0.484974/(1+np.exp(1.31696 * (3 - J))))
     else:
         if not bSmartBorders:
             if bSmoothBorders:
@@ -42,7 +43,9 @@ def get_my_grid(J, Xcur, lStart, rStart, ucur, uxcur, borders=1, bSmartBorders=F
     X = (Xg[1:]+Xg[:-1])/2
     return Xg, X.reshape((1, M2))
 
-def get_deriv_borders(M2, X, ux, Nper, borders, halfWdith, a=0.9):
+def get_deriv_borders(M2, X, ux, Nper, borders, halfWdith, a=0.95, bMidHalved=False):
+    if (np.max(np.diff(X)) == np.min(np.diff(X))):
+        print('a=',a)
     ux = ux.flatten()
     X = X.flatten()
     m1 = np.max(ux) # max
@@ -51,9 +54,13 @@ def get_deriv_borders(M2, X, ux, Nper, borders, halfWdith, a=0.9):
     iMin = np.where(ux == m2)[0][0]
 
     nuPart = (a**np.arange(Nper + 1) - 1)/(a**Nper - 1) * halfWdith
-
-    maxPart = np.hstack((nuPart[:-1] + X[iMax] - halfWdith, X[iMax] + halfWdith - nuPart[::-1]))
-    minPart = np.hstack((nuPart[:-1] + X[iMin] - halfWdith, X[iMin] + halfWdith - nuPart[::-1]))
+    if not bMidHalved:
+        maxPart = np.hstack((nuPart[:-1] + X[iMax] - halfWdith, X[iMax] + halfWdith - nuPart[::-1]))
+        minPart = np.hstack((nuPart[:-1] + X[iMin] - halfWdith, X[iMin] + halfWdith - nuPart[::-1]))
+    else:
+        nuPartMid = nuPart[-int(Nper/2):]
+        maxPart = np.hstack((nuPart[:-1] + X[iMax] - halfWdith, X[iMax] + halfWdith - nuPartMid[::-1]))
+        minPart = np.hstack((nuPartMid[:-1] + X[iMin] - halfWdith, X[iMin] + halfWdith - nuPart[::-1]))
 
     if iMax < iMin:
         overlap = np.sum(minPart < maxPart[-1])
@@ -120,14 +127,14 @@ def get_smart_grid_left_right(totalBorders, left, right):
             nrl, nrr = nrl, nrr + 1
     return nrl, nrr
     
-def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=False, widthTol=0.05, borders=1):
+def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=False, widthTol=0.05, borders=1, a=0.9):
     M2 = 2 * 2 ** J
     # first, get uniform grid
     X, Xg = nonuniform_grid(J, 1)
     u0 = get_exact(X, 0, alpha, beta, c, x0)
     u0x = get_exact_x(X, 0, alpha, beta, c, x0)
     # then 
-    Xg, X = get_my_grid(J, X, x0-fineWidth, x0+fineWidth, u0, u0x, borders=borders)
+    Xg, X = get_my_grid(J, X, x0-fineWidth, x0+fineWidth, u0, u0x, borders=borders, a=a)
     # plot_grid(Xg, X)
 
     u0 = get_exact(X, 0, alpha, beta, c, x0)
@@ -172,7 +179,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=Fa
             Xog, Xo = Xg, X
             Ps_old, Pbs_old = Ps, Pbs
             uxcur = r.y.reshape(1, M2) @ Dx1
-            Xg, X = get_my_grid(J, Xo, xmaxNew-fineWidth, xmaxNew+fineWidth, r.y, uxcur, borders=borders)
+            Xg, X = get_my_grid(J, Xo, xmaxNew-fineWidth, xmaxNew+fineWidth, r.y, uxcur, borders=borders, a=a)
             H_and_P = get_H_and_P(Xg, X, bHO)
             Ps, Pbs = H_and_P[0], H_and_P[1]
             ucur = change_grid(J, r.y, Ps_old, Pbs_old, X, Xog, Xo, R3, bHO)
@@ -268,7 +275,7 @@ if __name__ == '__main__':
     widthTol = 1/25
     fineWidth = .25
     nrOfBorders = 1
-    JRange = [4,5,6,7]
+    JRange = [3, 4,5,6]#7]
     # for J in JRange:
     #     mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
     #     print(mStr)
@@ -278,5 +285,15 @@ if __name__ == '__main__':
     for J in JRange:
         mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
         print(mStr)
-        X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders)
-        # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+        aValues = np.arange(.7, .85, .01)
+        if J == 4:
+            aValues = np.arange(.85, .87, 0.001)
+            continue
+        elif J == 5:
+            aValues = np.arange(.86, .88, 0.001)
+            continue
+        elif J == 6:
+            aValues = np.arange(.93, .95, 0.001)
+        for a in aValues:
+            X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders, a=a)
+            plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
