@@ -80,9 +80,9 @@ class AdaptiveGrid:
     def __get_deriv_nu_plus_borders(self, Xcur, weights):
         # find
         nuPart = (self.a**np.arange(self.Nper + 1) - 1)/(self.a**self.Nper - 1) * self.halfWidth
-        nuPartMid = nuPart[-int(self.Nper/2):]
         iMin = np.argmin(weights)
         if not self.onlyMin:
+            nuPartMid = nuPart[-int(self.Nper/2):]
             iMax = np.argmax(weights)
 
             maxPart = np.hstack((nuPart[:-1] + Xcur[iMax] - self.halfWidth, Xcur[iMax] + self.halfWidth - nuPartMid[::-1]))
@@ -98,7 +98,9 @@ class AdaptiveGrid:
                 raise ValueError("Not implemented case where xMin < xMax")
             mid = np.hstack((maxPart, minPart))
         else:
-            mid = np.hstack((nuPartMid[:-1] + Xcur[iMin] - self.halfWidth, Xcur[iMin] + self.halfWidth - nuPart[::-1]))
+            lp = nuPart[:-1] + Xcur[iMin] - self.halfWidth
+            rp = Xcur[iMin] + self.halfWidth - nuPart[::-1]
+            mid = np.hstack((lp, rp))
 
         left, right = mid[0], mid[-1]
         nrl, nrr = self.get_smart_left_right(self.M2 - len(mid) + 1, left, 1 - right)
