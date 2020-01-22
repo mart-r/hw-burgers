@@ -56,6 +56,10 @@ class AdaptiveGrid:
             raise ValueError("Other grids have not yet been implemented!")
     
     def get_grid(self, Xcur, weights):
+        weights = weights.flatten()
+        Xcur = Xcur.flatten()
+        if (weights.shape != Xcur.shape):
+            raise ValueError("Number of grid points must be the same, got %s and %s"%(str(weights.shape), str(Xcur.shape)))
         if self.gridType is AdaptiveGridType.DERIV_NU_PLUS_BORDERS:
             Xg = self.__get_deriv_nu_plus_borders(Xcur, weights)
         else:
@@ -64,11 +68,6 @@ class AdaptiveGrid:
         return Xg, X.reshape(1, self.M2)
 
     def __get_deriv_nu_plus_borders(self, Xcur, weights):
-        weights = weights.flatten()
-        Xcur = Xcur.flatten()
-        if (weights.shape != Xcur.shape):
-            raise ValueError("Number of grid points must be the same, got %s and %s"%(str(weights.shape), str(Xcur.shape)))
-        
         # find
         iMax = np.argmax(weights)
         iMin = np.argmin(weights)
