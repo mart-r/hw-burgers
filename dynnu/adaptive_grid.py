@@ -25,10 +25,6 @@ class AdaptiveGrid:
         self.M2 = 2 * 2**J
         self.gridType = gridType
         self.mid = mid # not used for DERIV_NU_PLUS_BORDERS
-        # if "interpolate" in kwargs:
-        #     self.interpolate = kwargs["interpolate"]
-        # else:
-        #     self.interpolate = True
         if "bc" in kwargs: # boundary conditions: [u(0, t), u(1,t)]
             self.bc = kwargs["bc"]
         else:
