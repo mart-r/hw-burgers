@@ -39,6 +39,8 @@ class AdaptiveGrid:
                 kwargs["Nper"] = int(self.M2/4) + 1 # default
             if "onlyMin" not in kwargs: # whether or not to use only the maximal value (i.e ignore minimal)
                 kwargs["onlyMin"] = False # default
+            if "nuBorders" not in kwargs: # whether or not to create nonuniform borders as well
+                kwargs["nuBorders"] = False
             self.a = kwargs["a"]
             if not isinstance(self.a, float):
                 raise ValueError("Need to specify a floating point number for a, got %s"%str(self.a))
@@ -56,6 +58,9 @@ class AdaptiveGrid:
                 raise ValueError("Expected Nper to between 0 and %d, got %d"%(self.M2, self.Nper))
             self.onlyMin = kwargs["onlyMin"]
             if not isinstance(self.onlyMin, bool):
+                raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMin))
+            self.nuBorders = kwargs["nuBorders"]
+            if not isinstance(self.nuBorders, bool):
                 raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMin))
         else:
             raise ValueError("Other grids have not yet been implemented!")
@@ -97,8 +102,14 @@ class AdaptiveGrid:
 
         left, right = mid[0], mid[-1]
         nrl, nrr = self.get_smart_left_right(self.M2 - len(mid) + 1, left, 1 - right)
-        lXg = np.linspace(0, left, nrl + 1)[:-1]
-        rXg = np.linspace(right, 1, nrr + 1)[1:]
+        if self.nuBorders:
+            a = (self.a + 1)/2 # below 0 -> tighter in the end
+            lXg = (a**np.arange(nrl) - 1)/(a**nrl - 1) * left
+            a = 2 - a
+            rXg = (a**np.arange(1, nrr + 1) - 1)/(a**nrr - 1) * (1 - right) + right
+        else:
+            lXg = np.linspace(0, left, nrl + 1)[:-1]
+            rXg =  np.linspace(right, 1, nrr + 1)[1:]
         
         Xg = np.hstack((lXg, mid, rXg))
         return Xg
