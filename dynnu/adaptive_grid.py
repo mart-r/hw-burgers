@@ -37,6 +37,8 @@ class AdaptiveGrid:
                 raise ValueError("Need to specify keyword argument 'hw'")
             if "Nper" not in kwargs: # number of points per half width, defaults to 'int(M2/4) + 1'
                 kwargs["Nper"] = int(self.M2/4) + 1 # default
+            if "onlyMin" not in kwargs: # whether or not to use only the maximal value (i.e ignore minimal)
+                kwargs["onlyMin"] = False # default
             self.a = kwargs["a"]
             if not isinstance(self.a, float):
                 raise ValueError("Need to specify a floating point number for a, got %s"%str(self.a))
@@ -52,6 +54,9 @@ class AdaptiveGrid:
                 raise ValueError("Expected integer for Nper, got %s"%str(self.Nper))
             if self.Nper < 0 or self.Nper * 2 > self.M2:
                 raise ValueError("Expected Nper to between 0 and %d, got %d"%(self.M2, self.Nper))
+            self.onlyMin = kwargs["onlyMin"]
+            if not isinstance(self.onlyMin, bool):
+                raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMin))
         else:
             raise ValueError("Other grids have not yet been implemented!")
     
@@ -69,23 +74,26 @@ class AdaptiveGrid:
 
     def __get_deriv_nu_plus_borders(self, Xcur, weights):
         # find
-        iMax = np.argmax(weights)
-        iMin = np.argmin(weights)
-
         nuPart = (self.a**np.arange(self.Nper + 1) - 1)/(self.a**self.Nper - 1) * self.halfWidth
         nuPartMid = nuPart[-int(self.Nper/2):]
-        maxPart = np.hstack((nuPart[:-1] + Xcur[iMax] - self.halfWidth, Xcur[iMax] + self.halfWidth - nuPartMid[::-1]))
-        minPart = np.hstack((nuPartMid[:-1] + Xcur[iMin] - self.halfWidth, Xcur[iMin] + self.halfWidth - nuPart[::-1]))
+        iMin = np.argmin(weights)
+        if not self.onlyMin:
+            iMax = np.argmax(weights)
 
-        if iMax < iMin:
-            overlap = np.sum(minPart < maxPart[-1])
-            while overlap > 0:
-                minPart = minPart[1:]
-                maxPart = maxPart[:-1]
-                overlap = np.sum(minPart < maxPart[-1]) 
+            maxPart = np.hstack((nuPart[:-1] + Xcur[iMax] - self.halfWidth, Xcur[iMax] + self.halfWidth - nuPartMid[::-1]))
+            minPart = np.hstack((nuPartMid[:-1] + Xcur[iMin] - self.halfWidth, Xcur[iMin] + self.halfWidth - nuPart[::-1]))
+
+            if iMax < iMin:
+                overlap = np.sum(minPart < maxPart[-1])
+                while overlap > 0:
+                    minPart = minPart[1:]
+                    maxPart = maxPart[:-1]
+                    overlap = np.sum(minPart < maxPart[-1]) 
+            else:
+                raise ValueError("Not implemented case where xMin < xMax")
+            mid = np.hstack((maxPart, minPart))
         else:
-            raise ValueError("Not implemented case where xMin < xMax")
-        mid = np.hstack((maxPart, minPart))
+            mid = np.hstack((nuPartMid[:-1] + Xcur[iMin] - self.halfWidth, Xcur[iMin] + self.halfWidth - nuPart[::-1]))
 
         left, right = mid[0], mid[-1]
         nrl, nrr = self.get_smart_left_right(self.M2 - len(mid) + 1, left, 1 - right)
