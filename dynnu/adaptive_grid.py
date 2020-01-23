@@ -6,14 +6,16 @@ import sys
 from scipy.integrate import ode
 from scipy.interpolate import interp1d
 
+from utils.nonuniform_grid import nonuniform_grid
+
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3")
 
 from enum import Enum
 
 class AdaptiveGridType(Enum):
+    STATIONARY = 0
     DERIV_NU_PLUS_BORDERS = 1 # DEFAULT
-    GRID_2 = 2
     GRID_3 = 3
 
 
@@ -62,6 +64,13 @@ class AdaptiveGrid:
             self.nuBorders = kwargs["nuBorders"]
             if not isinstance(self.nuBorders, bool):
                 raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMin))
+        elif gridType is AdaptiveGridType.STATIONARY:
+            if "a" not in kwargs:
+                kwargs["a"] = 1
+            self.a = kwargs["a"]
+            if self.a < 0:
+                raise ValueError("Nonuniform parameter 'a' cannot be lower than 0, got %f"%self.a)
+            self.Xg = nonuniform_grid(self.J, self.a)[1]
         else:
             raise ValueError("Other grids have not yet been implemented!")
     
@@ -72,6 +81,8 @@ class AdaptiveGrid:
             raise ValueError("Number of grid points must be the same, got %s and %s"%(str(weights.shape), str(Xcur.shape)))
         if self.gridType is AdaptiveGridType.DERIV_NU_PLUS_BORDERS:
             Xg = self.__get_deriv_nu_plus_borders(Xcur, weights)
+        elif self.gridType is AdaptiveGridType.STATIONARY:
+            Xg = self.Xg
         else:
             raise ValueError("Grids other than DERIV_NU_PLUS_BORDERS have not yet been implemented")
         X = (Xg[1:]+Xg[:-1])/2
