@@ -22,7 +22,7 @@ from getpass import getuser
 
 from dynnu.adaptive_grid import AdaptiveGrid, AdaptiveGridType
     
-def solve_FE(J=3, eqa=10, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, borders=1, a=0.9, bc=[1, 0] ):
+def solve_FE(J=3, eqa=10, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, borders=1, a=0.9, bc=[1, 0], bDebug=True):
     # calculate tf
     v = 5 * np.sqrt(eqa * eqb/6)
     tf = (1 - 2 * x0)/v
@@ -60,6 +60,12 @@ def solve_FE(J=3, eqa=10, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol=
     ue = [np.hstack((bc[0], u0.flatten(), bc[1]))]
     mdiff = [0]
     xmaxCur = x0
+    mids = [x0,]
+    c1 = np.sqrt(eqa/(6 * eqb))
+    c2 = 5 * np.sqrt(eqa * eqb / 6)
+    rmids1 = [get_cur_mid(X, get_exact_x(X, 0, eqa, eqb, x0)),]
+    rmids2 = [x0 + 1/c1 * np.log(.5), ]
+    swaps = []
     while r.t < tf:
         r.integrate(r.t+dt)
         toPrint = "tf=%g" % r.t
@@ -81,11 +87,11 @@ def solve_FE(J=3, eqa=10, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol=
         # plot2D(X, r.y, bShow=False)
         uxcur = r.y.reshape(1, M2) @ (np.linalg.lstsq(R2(X, Ps, Pbs), R1(X, Ps, Pbs))[0])
         xmaxNew = get_cur_mid(X, uxcur) # TODO - finding middle is not trivial...
-        # realMid = X[0, np.argmin(get_exact_x(X, r.t, eqa, eqb, x0))] + myCoef
-        # if len(tres)%10 == 0:
-        #     print(xmaxCur, xmaxNew, realMid)
-        # xmaxNew = realMid
-        # plot2D(X, uxcur)
+        realMid1 = X[0, np.argmin(get_exact_x(X, r.t, eqa, eqb, x0))] + myCoef
+        realMid2 = x0 + c2 * r.t + 1/c1 * np.log(.5)
+        mids.append(xmaxNew)
+        rmids1.append(realMid1)
+        rmids2.append(realMid2)
         if abs(xmaxNew - xmaxCur) > widthTol:
             Xog, Xo = Xg, X
             Ps_old, Pbs_old = Ps, Pbs
@@ -105,6 +111,7 @@ def solve_FE(J=3, eqa=10, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol=
             r.set_initial_value(ucur, r.t)
             r.set_f_params(X, M2, alpha, beta, Dx)
             xmaxCur = xmaxNew
+            swaps.append(r.t)
     print("DONE:", toPrint)
     T = np.array(tres).reshape(len(tres), 1)
     xx, tt = np.meshgrid(np.hstack((0, X.flatten(), 1)), T)
@@ -114,6 +121,16 @@ def solve_FE(J=3, eqa=10, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol=
     Ue = np.array(ue)
     print('SHAPES:', U.shape, Ue.shape)
     print('MAX diff:', np.max(mdiff))
+    if bDebug:
+        from matplotlib import pyplot as plt
+        plt.plot(T.flatten(), mids)
+        plt.plot(T.flatten(), rmids1)
+        plt.plot(T.flatten(), rmids2)
+        plt.plot(T.flatten(), mdiff)
+        plt.plot(swaps, swaps, 'o')
+        plt.legend(("CALC", "Real1", "REALREL", "ERROR", "swaps"))
+        plt.ylim((0, 1))
+        plt.show()
     return xx, tt, U, Ue
 
 def get_cur_mid(X, ux, target=0.5):
