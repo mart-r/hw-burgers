@@ -16,7 +16,7 @@ from enum import Enum
 class AdaptiveGridType(Enum):
     STATIONARY = 0
     DERIV_NU_PLUS_BORDERS = 1 # DEFAULT
-    GRID_3 = 3
+    STATIONARY_MIDDLE = 2
 
 
 class AdaptiveGrid:
@@ -71,6 +71,26 @@ class AdaptiveGrid:
             if self.a < 0:
                 raise ValueError("Nonuniform parameter 'a' cannot be lower than 0, got %f"%self.a)
             self.Xg = nonuniform_grid(self.J, self.a)[1]
+        elif gridType is AdaptiveGridType.STATIONARY_MIDDLE:
+            if "gap" not in kwargs:
+                kwargs["gap"] = .1
+            if "borders" not in kwargs:
+                kwargs["borders"] = 1
+            self.gap = kwargs["gap"]
+            if self.gap < 0 or self.gap > .5:
+                raise ValueError("Parameter 'gap' cannot be lower than 0 or bigger than 1/2, got %f"%self.gap)
+            self.borders = kwargs["borders"]
+            if self.borders < 1 or self.borders > self.M2/2:
+                raise ValueError("Parameter 'borders' cannot be lower than 1 or bigger than J^2, got %d"%self.borders)
+            Xg = nonuniform_grid(self.J, 1)[1] # uniform, [0, 1]
+            mid = Xg[borders:-borders] # correct number of elements
+            mid -= mid[0]           # from [0, 1 - borders/M2]
+            mid /= mid[-1]          # from [0, 1], correct number of elmenets
+            mid *= 1 - 2 * self.gap # from [0, 1-2*gap]
+            mid += self.gap         # from [gap, 1 - gap]
+            left = np.linspace(0, self.gap, borders + 1)[:-1]
+            right = np.linspace(1 - self.gap, 1, borders + 1)[1:]
+            self.Xg = np.hstack((left, mid, right))
         else:
             raise ValueError("Other grids have not yet been implemented!")
     
@@ -81,7 +101,8 @@ class AdaptiveGrid:
             raise ValueError("Number of grid points must be the same, got %s and %s"%(str(weights.shape), str(Xcur.shape)))
         if self.gridType is AdaptiveGridType.DERIV_NU_PLUS_BORDERS:
             Xg = self.__get_deriv_nu_plus_borders(Xcur, weights)
-        elif self.gridType is AdaptiveGridType.STATIONARY:
+        elif self.gridType is AdaptiveGridType.STATIONARY or \
+                self.gridType is AdaptiveGridType.STATIONARY_MIDDLE:
             Xg = self.Xg
         else:
             raise ValueError("Grids other than DERIV_NU_PLUS_BORDERS have not yet been implemented")
