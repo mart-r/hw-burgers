@@ -30,7 +30,11 @@ def plot2D(*args, **kwargs):
     pType = "-"
     if "type" in kwargs:
         pType = kwargs["type"]
+    if "title" in kwargs:
+        ax.set_title(kwargs["title"])
     ax.plot(X, Y, pType)
+    if "legend" in kwargs:
+        ax.legend(kwargs["legend"])
     bShow = True
     if "bShow" in kwargs:
         bShow = bool(kwargs["bShow"])
@@ -75,5 +79,7 @@ def plot3D(X, T=None, U=None, **kwargs):
     bShow = True
     if "bShow" in kwargs:
         bShow = bool(kwargs["bShow"])
+    if "zlims" in kwargs:
+        ax.set_zlim(kwargs["zlims"])
     if bShow:
         plt.show()
