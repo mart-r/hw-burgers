@@ -97,7 +97,7 @@ def solve_SG(J=3, c=1-1/1e4, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, bo
         mdiff.append(np.max(np.abs(ue[-1]-ures[-1])))
         # plot2D(X, r.y, bShow=False)
         xMid = get_cur_mid(X, vcur) # TODO - finding middle is not trivial...
-        realMid1 = X[0, np.argmin(get_exact_x(X, r.t, c, x0))] 
+        realMid1 = X[0, np.argmax(get_exact_x(X, r.t, c, x0))] 
         realMid2 = exact_mid(r.t)
         mids.append(xMid)
         rmids1.append(realMid1)
@@ -111,7 +111,7 @@ def solve_SG(J=3, c=1-1/1e4, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, bo
             # Xg, X = adaptiveGrid.get_grid(Xo, uxcur)
             Xg, X = adaptiveGrid.get_grid((Xo[0,:-1] + Xo[0,1:])/2, uxcur)
             if np.any(Xog != Xg) or np.any(Xo != X): # if there is an actual change in the grid
-                print("DIFF:\n", Xog != Xg)
+                # print("DIFF:\n", Xog != Xg)
                 H_and_P = get_H_and_P(Xg, X, bHO)
                 Ps, Pbs = H_and_P[0], H_and_P[1]
                 # plot_grid(Xg, X)
@@ -122,13 +122,13 @@ def solve_SG(J=3, c=1-1/1e4, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, bo
                     print(Xo, Xog, "\n", X, Xg)
                     print(e)
                     break
-                if len(swaps) < 2:
-                    ax = plot2D(Xo, ucur, bShow=False)
-                    plot2D(X, ucur, ax=ax, bShow=False)
-                    Xop = np.hstack((0, Xo.flatten(), 1))
-                    plot2D(Xop, ue[-1], ax=ax, legend=("PREV", "NEW", "EXACT"))
+                # if len(swaps) < 2:
+                #     ax = plot2D(Xo, ucur, bShow=False)
+                #     plot2D(X, ucur, ax=ax, bShow=False)
+                #     Xop = np.hstack((0, Xo.flatten(), 1))
+                #     plot2D(Xop, ue[-1], ax=ax, legend=("PREV", "NEW", "EXACT"))
                 try:
-                    vcur = change_grid(J, vcur, Ps_old, Pbs_old, X, Xog, Xo, R2, bHO, bc=bc, bInterpolate=True) # NEED to interpolate
+                    vcur = change_grid(J, vcur, Ps_old, Pbs_old, X, Xog, Xo, R2, bHO, bc=[0, 0], bInterpolate=True) # NEED to interpolate
                 except ValueError as e:
                     print(xMid)
                     print(Xo, Xog, "\n", X, Xg)
@@ -218,7 +218,7 @@ def get_Rs(X, bHO):
     if not bHO:
         c1 = lambda Pbs: 2 * np.pi - Pbs[2]
         c2 = lambda Pbs: 0 * Pbs[2] + 1
-        R2 = lambda X, Ps, Pbs: Ps[2] + c1(Pbs) * X      + c2(Pbs)
+        R2 = lambda X, Ps, Pbs: Ps[2] + c1(Pbs) @ X      + c2(Pbs)
         R1 = lambda X, Ps, Pbs: Ps[1] + c1(Pbs) 
         R0 = lambda X, Ps, Pbs: Ps[0]
         return R2, R1, R0
@@ -254,9 +254,6 @@ def get_Ss(X, bHO):
 
 def get_Dxs(R2, R1, R0, X, Ps, Pbs):
     R2c = R2(X, Ps, Pbs)
-    det = np.linalg.det(R2c)
-    cond = np.linalg.cond(R2c)
-    print('Det:', det, "cond:", cond)
     Dx = np.linalg.lstsq(R2c, R0(X, Ps, Pbs))[0]
     return Dx
 
@@ -298,7 +295,7 @@ if __name__ == '__main__':
     widthTol = 1/25
     fineWidth = .2
     nrOfBorders = 1
-    JRange = [4,]#5,6]#7]
+    JRange = [4,5,6]#7]
     for J in JRange:
         mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
         print(mStr)
