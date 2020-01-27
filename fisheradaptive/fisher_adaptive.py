@@ -120,7 +120,7 @@ def solve_FE(J=3, eqa=100, eqb=1/500, x0=1/4, fineWidth=3/16, bHO=True, widthTol
                 #     plot2D(X, ucur, ax=ax, bShow=False)
                 #     Xop = np.hstack((0, Xo.flatten(), 1))
                 #     plot2D(Xop, ue[-1], ax=ax, legend=("PREV", "NEW", "EXACT"))
-                Dx = get_Dxs(R2, R0, X, Ps, Pbs)
+                Dx = get_Dxs(R2, R1, R0, X, Ps, Pbs)
                 Sc2 = S2(X, Pbs)
                 Sc1 = S1(X, Pbs)
                 Sc0 = S0(X, Pbs)
