@@ -134,7 +134,7 @@ def solve_SG(J=3, c=1-1/1e4, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, bo
                     print(Xo, Xog, "\n", X, Xg)
                     print(e)
                     break
-                Dx = get_Dxs(R2, R0, X, Ps, Pbs)
+                Dx = get_Dxs(R2, R1, R0, X, Ps, Pbs)
                 Sc2 = S2(X, Pbs)
                 Sc1 = S1(X, Pbs)
                 Sc0 = S0(X, Pbs)
