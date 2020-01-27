@@ -41,6 +41,8 @@ class AdaptiveGrid:
                 kwargs["Nper"] = int(self.M2/4) + 1 # default
             if "onlyMin" not in kwargs: # whether or not to use only the maximal value (i.e ignore minimal)
                 kwargs["onlyMin"] = False # default
+            if "onlyMax" not in kwargs: # whether or not to use only the maximal value (i.e ignore minimal)
+                kwargs["onlyMax"] = False # default
             if "nuBorders" not in kwargs: # whether or not to create nonuniform borders as well
                 kwargs["nuBorders"] = False
             self.a = kwargs["a"]
@@ -60,10 +62,15 @@ class AdaptiveGrid:
                 raise ValueError("Expected Nper to between 0 and %d, got %d"%(self.M2, self.Nper))
             self.onlyMin = kwargs["onlyMin"]
             if not isinstance(self.onlyMin, bool):
-                raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMin))
+                raise ValueError("Expected onlyMin to be a boolean, got %s"%str(self.onlyMin))
+            self.onlyMax = kwargs["onlyMax"]
+            if not isinstance(self.onlyMax, bool):
+                raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMax))
+            if self.onlyMin and self.onlyMax:
+                raise ValueError("Cannot have both only min and only max!")
             self.nuBorders = kwargs["nuBorders"]
             if not isinstance(self.nuBorders, bool):
-                raise ValueError("Expected onlyMax to be a boolean, got %s"%str(self.onlyMin))
+                raise ValueError("Expected nuBorders to be a boolean, got %s"%str(self.nuBorders))
         elif gridType is AdaptiveGridType.STATIONARY:
             if "a" not in kwargs:
                 kwargs["a"] = 1
@@ -111,9 +118,16 @@ class AdaptiveGrid:
 
     def __get_deriv_nu_plus_borders(self, Xcur, weights):
         # find
-        nuPart = (self.a**np.arange(self.Nper + 1) - 1)/(self.a**self.Nper - 1) * self.halfWidth
-        iMin = np.argmin(weights)
-        if not self.onlyMin:
+        if self.a == 1:
+            nuPart = np.linspace(0, 1, self.Nper + 1) * self.halfWidth
+        else:
+            nuPart = (self.a**np.arange(self.Nper + 1) - 1)/(self.a**self.Nper - 1) * self.halfWidth
+        if self.onlyMin:
+            iMin = np.argmin(weights)
+        elif self.onlyMax:
+            iMax = np.argmax(weights)
+        if not self.onlyMin and not self.onlyMax:
+            iMin = np.argmin(weights)
             nuPartMid = nuPart[-int(self.Nper/2):]
             iMax = np.argmax(weights)
 
@@ -130,8 +144,9 @@ class AdaptiveGrid:
                 raise ValueError("Not implemented case where xMin < xMax")
             mid = np.hstack((maxPart, minPart))
         else:
-            lp = nuPart[:-1] + Xcur[iMin] - self.halfWidth
-            rp = Xcur[iMin] + self.halfWidth - nuPart[::-1]
+            x = Xcur[iMin] if self.onlyMin else Xcur[iMax]
+            lp = nuPart[:-1] + x - self.halfWidth
+            rp = x + self.halfWidth - nuPart[::-1]
             mid = np.hstack((lp, rp))
 
         left, right = mid[0], mid[-1]
