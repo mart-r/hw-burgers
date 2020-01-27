@@ -38,12 +38,16 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=Fa
     H_and_P = get_H_and_P(Xg, X, bHO)
     Ps, Pbs = H_and_P[0], H_and_P[1]
     R3, R2, R0 = get_Rs(X, bHO)
+    S3, S2, S0 = get_Ss(bHO)
+    Sc3 = S3(X, Pbs)
+    Sc2 = S2(X, Pbs)
+    Sc0 = S0(X, Pbs)
     Dx1, Dx3 = get_Dxs(R3, R2, R0, X, Ps, Pbs)
     # in cluster or not
     cluster = getuser() == "mart.ratas"
 
     r = ode(fun).set_integrator('lsoda', nsteps=int(1e8))
-    r.set_initial_value(u0.flatten(), 0).set_f_params(X, M2, alpha, beta, Dx1, Dx3)
+    r.set_initial_value(u0.flatten(), 0).set_f_params(X, M2, alpha, beta, Dx1, Dx3, Sc3, Sc2, Sc0)
     dt = tf/1e3 # TODO different? adaptive?
     xres = [np.hstack((0, X.flatten(), 1))]
     tres = [0]
@@ -79,8 +83,11 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, fineWidth=3/16, bHO=Fa
             Ps, Pbs = H_and_P[0], H_and_P[1]
             ucur = change_grid(J, r.y, Ps_old, Pbs_old, X, Xog, Xo, R3, bHO)
             Dx1, Dx3 = get_Dxs(R3, R2, R0, X, Ps, Pbs)
+            Sc3 = S3(X, Pbs)
+            Sc2 = S2(X, Pbs)
+            Sc0 = S0(X, Pbs)
             r.set_initial_value(ucur, r.t)
-            r.set_f_params(X, M2, alpha, beta, Dx1, Dx3)
+            r.set_f_params(X, M2, alpha, beta, Dx1, Dx3, Sc3, Sc2, Sc0)
             xmaxCur = xmaxNew
     print("DONE:", toPrint)
     T = np.array(tres).reshape(len(tres), 1)
@@ -125,8 +132,8 @@ def get_Rs(X, bHO):
         c1 = lambda Pbs: 2 * Pbs[3] - 2 * Pbs[2]
         c2 = lambda Pbs: Pbs[2] - 2 * Pbs[3]
         c3 = lambda Pbs: 0 * Pbs[2]
-        R3 = lambda X, Ps, Pbs: Ps[3] + c1(Pbs) * X**2/2 + c2(Pbs) * X + c3(Pbs)
-        R2 = lambda X, Ps, Pbs: Ps[2] + c1(Pbs) * X      + c2(Pbs)
+        R3 = lambda X, Ps, Pbs: Ps[3] + c1(Pbs) @ X**2/2 + c2(Pbs) @ X + c3(Pbs)
+        R2 = lambda X, Ps, Pbs: Ps[2] + c1(Pbs) @ X      + c2(Pbs)
         R0 = lambda X, Ps, Pbs: Ps[0]
         return R3, R2, R0
     else:
@@ -140,6 +147,25 @@ def get_Rs(X, bHO):
         R2 = lambda X, Ps, Pbs: Ps[2] + c1(Pbs) @ X       + c2(Pbs)
         return R5, R4, R2
 
+def get_Ss(bHO):
+    if not bHO:
+        c1 = lambda Pbs: 0
+        c2 = lambda Pbs: 0
+        c3 = lambda Pbs: 0
+        S3 = lambda X, Pbs: c1(Pbs) * X**2/2 + c2(Pbs) * X + c3(Pbs)
+        S2 = lambda X, Pbs: c1(Pbs) * X      + c2(Pbs)
+        S0 = lambda X, Pbs: 0 * X
+        return S3, S2, S0
+    else:
+        c1 = lambda Pbs: 1
+        c2 = lambda Pbs: 0
+        c3 = lambda Pbs: - 1/4.
+        c4 = lambda Pbs: 1/12.
+        c5 = lambda Pbs: 0
+        S5 = lambda X, Pbs: c1(Pbs) * X**4/24 + c2(Pbs) * X**3/6 + c3(Pbs) * X**2/2 + c4(Pbs) * X + c5(Pbs)
+        S4 = lambda X, Pbs: c1(Pbs) * X**3/6  + c2(Pbs) * X**2/2 + c3(Pbs) * X      + c4(Pbs)
+        S2 = lambda X, Pbs: c1(Pbs) * X       + c2(Pbs)
+        return S5, S4, S2
 
 def get_Dxs(R3, R2, R0, X, Ps, Pbs):
     Dx1 = np.linalg.lstsq(R3(X, Ps, Pbs), R2(X, Ps, Pbs))[0]
@@ -158,10 +184,10 @@ def get_exact_x(X, T, alpha, beta, c, x0=1/4):
     return - 3 * c**(3/2.) * b / a * np.tanh(c**.5/2 * (X - c * b * T - x0)) * np.cosh(c**.5/2 * (X - c * b * T - x0))**(-2)
 
 
-def fun(t, u, X, M2, alpha, beta, Dx1, Dx3):
+def fun(t, u, X, M2, alpha, beta, Dx1, Dx3, S3, S2, S0):
     u = u.reshape(1, M2)
-    ux = u @ Dx1
-    uxxx = u @ Dx3
+    ux = (u - S3) @ Dx1 + S2
+    uxxx = (u - S3) @ Dx3 + S0
     dudt = - alpha * u * ux - beta * uxxx
     return dudt.flatten()
 
