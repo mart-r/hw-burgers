@@ -9,20 +9,26 @@ if sys.version_info[0] < 3:
 import numpy as np
 
 __debug = False
+# __debug = True
 
 
 
-def adapt_grid(weights, Xgc, deriv=0):
+def adapt_grid(weights, Xgc, deriv=0, wScale=0.5):
     # attempting to make GRID
     # dim of weights is (1 + deriv) less than that of Xgc
+    weights = weights.flatten()
     targetLength = len(Xgc)
     if __debug:
         print('Target Length:', targetLength)
-    weights = weights/np.sum(weights) * (len(Xgc) - 2) # two less than in grid
+    weights = weights ** wScale # SCALE
+    weights = weights/np.sum(weights) * (len(Xgc) - 1) # two less than in grid
     if __debug:
         print("TotalWeights:", np.sum(weights))
     for i in range(deriv):
         Xgc = (Xgc[1:] + Xgc[:-1])/2 #mean
+    if (Xgc[0] != 0 or Xgc[-1] != 1): # normalize
+        Xgc -= Xgc[0]
+        Xgc /= Xgc[-1]
     i = 0
     # making sure not to have sections that need less than 1 grid point
     Xg2 = [0, ]
@@ -57,8 +63,11 @@ def adapt_grid(weights, Xgc, deriv=0):
         i += 1
     while leftOver > 0.9: # 
         # add to min
-        w2[np.argmin(w2)] += 1
+        w2[len(w2) - 1 - np.argmin(w2[::-1])] += 1
         leftOver -= 1
+    while leftOver < -.9:
+        w2[np.argmax(np.array(w2)/np.diff(Xg2))] -= 1
+        leftOver += 1
     if __debug:
         print("total w2:", np.sum(w2))
         print("weigths recalc:", w2)
@@ -67,7 +76,7 @@ def adapt_grid(weights, Xgc, deriv=0):
         print('LeftOVER:', leftOver)
     start = 0
     totc = 0
-    Xgn = [Xg2[0],]
+    Xgn = [0,]
     done = 1
     # print(len(w2), len(Xg2))
     for w, stop in zip(w2, Xg2[1:]):
@@ -85,20 +94,29 @@ def adapt_grid(weights, Xgc, deriv=0):
         else:
             if __debug:
                 print()
-        if done >= targetLength - 2: # last to do
-            Xgn.append((start + 1)/2)
+        if done >= targetLength - 1 and np.max(Xgn[-1]) < 1: # last to do
+            if done == targetLength:
+                if __debug:
+                    print('Shifting end to the 1')
+                curEnd = Xgn[-1]
+                curEnd[-1] = 1
+                Xgn[-1] = curEnd
+            else:
+                if __debug:
+                    print('Adding 1 to the end')
+                Xgn.append(1)
             break
     if __debug:
         print('Leftover:', totc)
+        print(Xgn[-1], np.max(Xgn[-1]), Xg2[-1])
+    if np.max(Xgn[-1]) < Xg2[-1]:
+        missing = len(Xg2) - len(Xgn)
+        Xgn.append(np.linspace(np.max(Xgn[-1]), 1, missing + 1)[1:])
+        if __debug:
+            print('adding ', missing, "from", np.max(Xgn[-1]), "to", 1)
     Xgn = np.hstack(Xgn)
-    if np.max(Xgn) < Xg2[-1]:
-        Xgn = np.hstack((Xgn, 1))
     if __debug:
         print('new shape:', Xgn.shape)
+        print('Xg:', np.sort(Xgn))
     Xgn = np.sort(Xgn)        
     return Xgn
-
-def adapt_grid_x(weights, Xgc):
-    # adapt grid from derivative weights
-    # dim of weights is 2 less than that of Xgc
-    pass
