@@ -40,6 +40,8 @@ class NDPolyFitter:
         return np.squeeze(np.array(res))
     
     def __call__(self, *variables):
+        if len(variables) != len(self.vars):
+            raise ValueError("Need to specify the same number of variables as when creating. Got %d, expected %d"%(len(variables), len(self.vars)))
         res = self.__helper(variables, self.coefs, self.degs)
         return res
 
