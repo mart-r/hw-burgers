@@ -52,7 +52,7 @@ if __name__ == "__main__":
     VAL = XX**2 - YY**2 + 2 * ZZ + 6 * Z2Z2
     print('shape of data:', VAL.shape)
 
-    p2 = NDPolyFitter((XX, YY, ZZ, Z2Z2), VAL, tol=1e-10)
+    p2 = NDPolyFitter((XX, YY, ZZ, Z2Z2), VAL, tol=1e-10) # the inaccuracies increase somewhat as the dimensions increase
     print("Got fitter:", p2)
     print("With coefficients:", p2.coefs)
     diff = p2(XX, YY, ZZ, Z2Z2) - VAL
