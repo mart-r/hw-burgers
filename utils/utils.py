@@ -35,6 +35,10 @@ def plot2D(*args, **kwargs):
     ax.plot(X, Y, pType)
     if "legend" in kwargs:
         ax.legend(kwargs["legend"])
+    if "xlims" in kwargs:
+        ax.set_xlim(kwargs["xlims"])
+    if "ylims" in kwargs:
+        ax.set_ylim(kwargs["ylims"])
     bShow = True
     if "bShow" in kwargs:
         bShow = bool(kwargs["bShow"])
@@ -59,6 +63,7 @@ def plot_grid(Xg, X, **kwargs):
         bShow = bool(kwargs["bShow"])
     if bShow:
         plt.show()
+    return ax
 
 def plot3D(X, T=None, U=None, **kwargs):
     if T is None and U is None:
