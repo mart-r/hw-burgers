@@ -25,4 +25,21 @@ if __name__ == "__main__":
     p = NDPolyFitter((X, Y), Z)
     print('Fitter:', p)
     print('fitter coefs:', p.coefs)
-    print('DIFF:', p(X,Y) - Z)
+    diff = p(X,Y) - Z
+    # print('DIFF:', diff)
+    print('MAX difF:', np.max(np.abs(diff)))
+
+    print("Testing 3D")
+    z = np.linspace(0, 1, 5)
+    XX, YY, ZZ = np.meshgrid(x, y, z)
+    print('shapes of input:', XX.shape, YY.shape, ZZ.shape)
+
+    VAL = XX**2 - YY**2 + 2 * ZZ
+    print('shape of data:', VAL.shape)
+
+    p2 = NDPolyFitter((XX, YY, ZZ), VAL)
+    print("Got fitter:", p2)
+    print("With coefficients:", p2.coefs)
+    diff = p2(XX, YY, ZZ) - VAL
+    # print("And diff:", diff)
+    print('MAX difF:', np.max(np.abs(diff)))

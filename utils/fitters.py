@@ -10,36 +10,65 @@ import numpy as np
 
 class NDPolyFitter:
 
-    def __init__(self, vars, value, degs=None, tol=1e-12):
-        if len(vars) != 2:
-            raise ValueError("Only 2D fitting supported, for now at least")
+    def __init__(self, variables, value, degs=None, tol=1e-12):
         if degs is None:
-            degs = [2 for el in vars]
-        if len(degs) != len(vars):
+            degs = [2 for el in variables]
+        if len(degs) != len(variables):
             raise ValueError("Need the same number of degrees as there are defined variables")
-        self.X = vars[0]
-        self.Y = vars[1]
-        self.degX = degs[0]
-        self.degY = degs[1]
+        self.vars = variables
+        self.degs = degs
         self.Z = value
-        self.coefs = polyfit(self.X, self.Y, self.Z, self.degX, self.degY)
+        self.coefs = ndpolyfit(self.vars, self.Z, self.degs)
         self.coefs[np.abs(self.coefs) < tol] = 0
     
-    def __call__(self, x, y):
-        res = 0
-        ix = 0
-        for row in self.coefs:
-            iy = 0
-            for coef in row:
-                res += coef * x**ix * y**iy
-                iy += 1
-            ix += 1
+    def __helper(self, variables, coefs, degs):
+        if len(variables) > 2:
+            res = 0
+            maxDeg = degs[0]
+            var = variables[0]
+            for d in range(maxDeg + 1):
+                res += var**d * self.__helper(variables[1:], coefs[d], degs[1:])
+        else:
+            res = 0
+            i1 = 0
+            for row in coefs:
+                i2 = 0
+                for coef in row:
+                    res += coef * variables[0]**i1 * variables[1]**i2
+                    i2 += 1
+                i1 += 1
+        return np.squeeze(np.array(res))
+    
+    def __call__(self, *variables):
+        res = self.__helper(variables, self.coefs, self.degs)
         return res
 
-def polyfit(X, Y, Z, degX=2, degY=2, doPrint=False):
-    X = X.flatten()
-    Y = Y.flatten()
+def ndpolyfit(variables, val, degs=None):
+    if degs is None:
+        degs = [3 for el in variables]
+    if len(variables) != len(degs):
+        raise ValueError("Need the same amount of variables and degrees")
+    variables = [v.flatten() for v in variables]
+    arrays = __helper(variables, degs)
+    size = (np.prod(np.shape(variables[0])), np.prod([d + 1 for d in degs]))
+    A = np.array(arrays).T.reshape(size, order='F')
+    B = val.flatten()
+    res = np.linalg.lstsq(A, B)[0]
+    return res.reshape([d + 1 for d in degs])
 
+def __helper(var, deg):
+    arrays = []
+    if len(var) > 2:
+        cdeg = deg[0]
+        cvar = var[0]
+        for d in range(0, cdeg + 1):
+            arrays.append(cvar**d * __helper(var[1:], deg[1:]))
+    else:
+        arrays.append(__helper0(*var, *deg))
+    res = np.squeeze(np.array(arrays))
+    return res
+
+def __helper0(X, Y, degX, degY, returnPrint=False):
     arrays = []
     printOut = []
     for dx in range(0, degX + 1):
@@ -54,6 +83,16 @@ def polyfit(X, Y, Z, degX=2, degY=2, doPrint=False):
                 printOut[-1].append('Y**%d'%dy)
             else:
                 printOut[-1].append('X**%d * Y**%d'%(dx, dy))
+    if returnPrint:
+        return arrays, printOut
+    else:
+        return arrays
+
+def polyfit(X, Y, Z, degX=2, degY=2, doPrint=False):
+    X = X.flatten()
+    Y = Y.flatten()
+
+    arrays, printOut = __helper0(X, Y, degX, degY, True)
     A = np.array(arrays).T
     B = Z.flatten()
 
