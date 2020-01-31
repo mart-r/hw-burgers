@@ -203,7 +203,7 @@ if __name__ == '__main__':
     widthTol = 1/25
     fineWidth = .25
     nrOfBorders = 1
-    JRange = [4,5,6]#7]
+    JRange = [5,6]#7]
     # for J in JRange:
     #     mStr = "J=%d, fineWidth = %g"%(J, fineWidth)
     #     print(mStr)
@@ -211,8 +211,6 @@ if __name__ == '__main__':
         # print(X.shape, T.shape, U.shape, Ue.shape)
         # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
     for J in JRange:
-        mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
-        print(mStr)
         aValues = np.arange(.7, .85, .01)
         if J == 4:
             aValues = [.856,]
@@ -220,6 +218,28 @@ if __name__ == '__main__':
             aValues = [.874,]
         elif J == 6:
             aValues = [.940,]
-        for a in aValues:
-            X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders, a=a)
+        a = aValues[0]
+        maxDiffs = []
+        for fineWidth in np.arange(.15, .35, .01):
+            for widthTol in np.arange(.01,.1,.005):
+                mStr = "J=%d, HOHWM, fineWidth = %g, widthTol=%g"%(J, fineWidth, widthTol)
+                print(mStr)
+            # for a in aValues:
+                try:
+                    X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders, a=a)
+                except Exception as e:
+                    print('\nGOT EXCEPTION\n', e)
+                    continue
+                md = np.max(np.abs(U - Ue))
+                maxDiffs.append((fineWidth, widthTol, np.max(T), md))
             # plot3D(X, T, U, bShow=False, title=mStr),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+        print('MAX diffs:\n', maxDiffs)
+        minCur = 1e6
+        minFw = maxDiffs[0][0]
+        minWt = maxDiffs[0][1]
+        for fw, wt, ctf, md in maxDiffs:
+            if ctf >= tf and md < minCur:
+                minCur = md
+                minFw = fw
+                minWt = wt
+        print('BEST at ', minFw, ",", minWt, " : max diff=", minCur)
