@@ -148,6 +148,10 @@ class AdaptiveGrid:
             lp = nuPart[:-1] + x - self.halfWidth
             rp = x + self.halfWidth - nuPart[::-1]
             mid = np.hstack((lp, rp))
+        mid = mid[np.sum(mid < 0):] # remove numbers less than 0
+        nrOfGreaterThan = np.sum(mid > 1) # remove numbers greater than 1
+        if nrOfGreaterThan > 0:
+            mid = mid[:-nrOfGreaterThan]
 
         left, right = mid[0], mid[-1]
         nrl, nrr = self.get_smart_left_right(self.M2 - len(mid) + 1, left, 1 - right)
