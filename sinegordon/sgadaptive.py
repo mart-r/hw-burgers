@@ -29,22 +29,22 @@ def solve_SG(J=3, c=1-1/1e4, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, bo
     M2 = 2 * 2 ** J
     adaptiveGrid = AdaptiveGrid(J, AdaptiveGridType.DERIV_NU_PLUS_BORDERS, x0, borders, 
                     a=a, hw=fineWidth, onlyMax=True, bc=bc, Nper=int(M2/2)-borders)
-    # adaptiveGrid = AdaptiveGrid(J, AdaptiveGridType.STATIONARY_MIDDLE, x0, borders, gap=.11)
+    # adaptiveGrid = AdaptiveGrid(J, AdaptiveGridType.STATIONARY, x0, borders, gap=.11)
     # first, get uniform grid
     X, Xg = nonuniform_grid(J, 1)
     u0x = get_exact_x(X, 0, c, x0)
     # then 
     Xg, X = adaptiveGrid.get_grid(X, u0x)
+    # print('MIN grid, coll:', np.min(np.diff(Xg)),np.min(np.diff(X)))
     # plot_grid(Xg, X)
 
     u0 = get_exact(X, 0, c, x0)
     v0 = get_exact_t(X, 0, c, x0)
     # ax = plot2D(X, u0, bShow=False)
     # plot2D(X, v0, ax=ax, legend=("u0", v0))
-    print('How well are boundary conditions enforced? left:', bc[0]-u0[0,0], 'right:', bc[1]-u0[0,-1])
 
     # H, P
-    H_and_P = get_H_and_P(Xg, X, bHO)
+    H_and_P = get_H_and_P(J, Xg, X, bHO)
     Ps, Pbs = H_and_P[0], H_and_P[1]
     R2, R1, R0 = get_Rs(X, bHO)
     S2, S1, S0 = get_Ss(X, bHO) 
@@ -112,7 +112,7 @@ def solve_SG(J=3, c=1-1/1e4, x0=1/4, fineWidth=3/16, bHO=True, widthTol=1/25, bo
             Xg, X = adaptiveGrid.get_grid((Xo[0,:-1] + Xo[0,1:])/2, uxcur)
             if np.any(Xog != Xg) or np.any(Xo != X): # if there is an actual change in the grid
                 # print("DIFF:\n", Xog != Xg)
-                H_and_P = get_H_and_P(Xg, X, bHO)
+                H_and_P = get_H_and_P(J, Xg, X, bHO)
                 Ps, Pbs = H_and_P[0], H_and_P[1]
                 # plot_grid(Xg, X)
                 try:
@@ -187,7 +187,7 @@ def get_cur_mid(X, v):
     return X[0, np.argmin(v)]
 
 
-def get_H_and_P(Xg, X, bHO):
+def get_H_and_P(J, Xg, X, bHO):
     H = Hm_nu(Xg)
     P2 = Pn_nu(J, 2, Xg, X.flatten())
     P2b = Pnx_nu(J, 2, 1, Xg) 
@@ -286,27 +286,56 @@ def fun(t, uv, X, M2, Dx, S2, S1, S0):
 
 
 if __name__ == '__main__':
-    # J = 6
-    alpha = 6
-    beta = .4e-3
-    c = .5e4
     x0 = .3
-    tf = (1-2*x0)/(beta * c)
-    widthTol = 1/25
-    fineWidth = .2
+    # widthTol = 1/35
+    # fineWidth = .1
+    c = 1 - 1e-4
+    tf = (1 - 2 * x0)/c
     nrOfBorders = 1
-    JRange = [4,5,6]#7]
+    JRange = [4,]#5,6,7]
     for J in JRange:
-        mStr = "J=%d, HOHWM, fineWidth = %g"%(J, fineWidth)
-        print(mStr)
-        aValues = np.arange(.7, .85, .01)
-        if J == 4:
-            aValues = [.9,]
-        elif J == 5:
-            aValues = [.999,]
-        elif J == 6:
-            aValues = [.999,]
-        for a in aValues:
-            # X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders, a=a)
-            X, T, U, Ue = solve_SG(J, x0=x0, a=a, widthTol=widthTol,fineWidth=fineWidth, borders=nrOfBorders)
-            plot3D(X, T, U, bShow=False, title=mStr, zlims=[0, 2*np.pi]),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+        bests = []
+        for fineWidth in np.arange(.2, .5, .01):
+        # for fineWidth in [0.37]:
+        #     for widthTol in [0.095]:
+            for widthTol in np.arange(.04, .15, .005):
+            # for widthTol in [.055]:#np.arange(.01, .1, .005):
+                if J == 4:
+                    aValues = np.arange(.881, .906, .001)
+                    # aValues = np.arange(.892, .906, .001)
+                    # aValues = [.896,]
+                elif J == 5:
+                    # aValues = np.arange(.963, .976, .001)
+                    aValues = np.arange(.960, .980, .001)
+                    # aValues = [.974,]
+                elif J == 6:
+                    aValues = np.arange(1, 1.0001, .001)
+                elif J == 7:
+                    aValues = [1.,]
+                for a in aValues:
+                    mStr = "J=%d, HOHWM, fineWidth = %g, widthTol=%g, a=%g"%(J, fineWidth, widthTol, a)
+                    print(mStr)
+                    # X, T, U, Ue = solve_kdv(J, alpha=alpha, beta=beta, c=c, tf=tf, bHO=True, x0=x0, fineWidth=fineWidth, widthTol=widthTol, borders=nrOfBorders, a=a)
+                    try:
+                        X, T, U, Ue = solve_SG(J, c=c, x0=x0, a=a, widthTol=widthTol,fineWidth=fineWidth, borders=nrOfBorders)
+                    except ValueError as e:
+                        print('Got exception (continuing on next)', e)
+                    md = np.max(np.abs(U - Ue))
+                    bests.append((fineWidth, widthTol, a, np.max(T), md))
+                    #mdiffs.append(np.max(np.abs(U - Ue)))
+                    # plot3D(X, T, U, bShow=False, title=mStr, zlims=[0, 2*np.pi]),plot3D(X,T,Ue, bShow=False),plot3D(X, T, U-Ue)
+                # iMin = np.argmin(mdiffs)
+                # print("best result: ", mdiffs[iMin], "at", aValues[iMin])
+                    # bests.append((aValues[iMin], mdiffs[iMin]))
+        print ("BEST:\n", bests)
+        minDiff = 1e10
+        minFW = "N/A"
+        minWT = "N/A"
+        minA = "N/A"
+        for fw, wt, a, ctf, md in bests:
+            if (ctf >= tf) and (md < minDiff):
+                minDiff = md
+                minFW = fw
+                minWT = wt
+                minA = a
+        print ("Best at fw=", minFW, "wt=", minWT, "a=", minA, " with max diff of ", minDiff)
