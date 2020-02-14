@@ -210,7 +210,7 @@ def change_grid(J, ucur, Pso, Pbso, X, Xog, Xo, R2, bHO, bInterpolate=True, bc=N
     else:
         filledUcur = np.hstack((bc[0], ucur.flatten(), bc[1]))
         filledX = np.hstack((0, Xo.flatten(), 1))
-        interpolant = interp1d(filledX, filledUcur)
+        interpolant = interp1d(filledX, filledUcur, 3)
         unew = interpolant(X.flatten())
         return unew.reshape(*ucur.shape)
 
