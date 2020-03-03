@@ -28,9 +28,23 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
     # dt
     dt = tf/1e3 # 1000 points
 
+    # boundary conditions
+    bc = [0, 0]
+
     M2 = 2 * 2**J
     X, Xg = nonuniform_grid(J, 1) # TODO - use adaptive grid 
-    Ps = get_Ps(J, X, Xg)
+
+    adaptiveGrid = AdaptiveGrid(J, AdaptiveGridType.DERIV_NU_PLUS_BORDERS, x0, borders,
+                                    a=a, hw=fineWidth/2)#, bc=bc, Nper=int(M2/2)-borders)
+    X, Xg = nonuniform_grid(J, 1)
+
+    u0x = get_exact_x(X, 0, alpha, beta, mu, x0)
+    # then 
+    Xg, X = adaptiveGrid.get_grid(X, u0x)
+    print(Xg.shape, X.shape)
+    plot_grid(Xg, X)
+
+    Ps = get_Ps(J, X.flatten(), Xg)
     Pbs = get_Pbs(J, Xg)
     R5, R4, R3, R2 = get_R()
     S5, S4, S3, S2 = get_S()
@@ -45,8 +59,6 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
 
     # initial conditions
     u0 = get_exact(X, 0, alpha, beta, mu, x0)
-    # boundary conditions
-    bc = [0, 0]
 
     # ODE solver
     solver = ode(fun).set_integrator('lsoda', nsteps=int(1e9))
@@ -57,6 +69,9 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
     ueres = [np.hstack((bc[0], u0.flatten(), bc[1]))]
     tres = [0,]
 
+    # mid
+    curmid = x0
+
     # start integrating
     while solver.t < tf and solver.successful:
         solver.integrate(solver.t + dt)
@@ -65,11 +80,39 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
         ures.append(np.hstack((bc[0], solver.y, bc[1])))
         ueres.append(np.hstack((bc[0], get_exact(X, solver.t, alpha, beta, mu, x0).flatten(), bc[1])))
         reprint('t=%g'%solver.t)
+        newmid = X[0, np.argmax(solver.y)]
+        if np.abs(curmid - newmid) > widthTol:
+            Xog, Xo = Xg, X
+            Ps_old, Pbs_old = Ps, Pbs
+            uxcur = solver.y.reshape(1, M2) @ Dx1
+            Xg, X = adaptiveGrid.get_grid(Xo, uxcur)
+            Ps, Pbs = get_Ps(J, X.flatten(), Xg), get_Pbs(J, Xg)
+            ucur = change_grid(J, solver.y, Ps_old, Pbs_old, X, Xog, Xo, R3, bc=bc)
+            Dx1 = np.linalg.lstsq(R5(X, Ps, Pbs), R4(X, Ps, Pbs))[0]
+            Dx2 = np.linalg.lstsq(R5(X, Ps, Pbs), R3(X, Ps, Pbs))[0]
+            Dx3 = np.linalg.lstsq(R5(X, Ps, Pbs), R2(X, Ps, Pbs))[0]
+            solver.set_initial_value(ucur, solver.t)
+            solver.set_f_params(alpha, beta, M2, Dx1, Dx2, Dx3, S5(X, Pbs), S4(X, Pbs), S3(X, Pbs), S2(X, Pbs))
+            curmid = newmid
     XX = np.array(xres)
     T = np.array([tres for i in range(M2 + 2)]).T
     U = np.array(ures)
     Ue = np.array(ueres)
     return XX, T, U, Ue
+
+def change_grid(J, ucur, Pso, Pbso, X, Xog, Xo, R3, bc=[0,0], bInterpolate=True):
+    if not bInterpolate:
+        Px2 = np.hstack([Pnx_nu(J, 2, x, Xog) for x in X.flatten()])
+        Px3 = np.hstack([Pnx_nu(J, 3, x, Xog) for x in X.flatten()])
+        Px4 = np.hstack([Pnx_nu(J, 4, x, Xog) for x in X.flatten()])
+        Px5 = np.hstack([Pnx_nu(J, 5, x, Xog) for x in X.flatten()])
+        PsMID = [None, None, Px2, Px3, Px4, Px5]
+        return ucur @ np.linalg.lstsq(R3(Xo, Pso, Pbso), R3(X, PsMID, Pbso))[0]
+    else:
+        filledUcur = np.hstack((bc[0], ucur.flatten(), bc[1]))
+        filledX = np.hstack((0, Xo.flatten(), 1))
+        interpolant = interp1d(filledX, filledUcur, 7)
+        return interpolant(X.flatten()).reshape(*ucur.shape)
 
 
 def fun(t, u, alpha, beta, M2, Dx1, Dx2, Dx3, S5, S4, S3, S2):
@@ -141,7 +184,7 @@ def get_exact(X, T, alpha, beta, mu, x0=1/4):
 def get_exact_x(X, T, alpha, beta, mu, x0=1/4):
     h1 = np.sqrt(-beta/alpha) * mu**2
     H1 = mu * ( X - T * mu**2 * beta - x0)
-    return h1 * np.cosh(H1)**(-1) * np.tanh(H1)
+    return h1 * np.cosh(-H1)**(-1) * np.tanh(-H1)
 
 if __name__ == "__main__":
     X, T, U, Ue = solve_mkdv(J=5, x0=1/4.)
