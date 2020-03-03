@@ -185,7 +185,7 @@ def get_exact_x(X, T, alpha, beta, mu, x0=1/4):
     return h1 * np.cosh(-H1)**(-1) * np.tanh(-H1)
 
 if __name__ == "__main__":
-    X, T, U, Ue = solve_mkdv(J=5, x0=1/4.)
+    X, T, U, Ue, tf = solve_mkdv(J=5, x0=1/4.)
     print('TF=', np.max(T), 'max diff:', np.max(np.abs(U - Ue)))
     print(X.shape, T.shape, U.shape, Ue.shape)
     plot3D(X, T, U, bShow=False)
