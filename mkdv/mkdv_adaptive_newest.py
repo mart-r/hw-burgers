@@ -41,8 +41,6 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
     u0x = get_exact_x(X, 0, alpha, beta, mu, x0)
     # then 
     Xg, X = adaptiveGrid.get_grid(X, u0x)
-    print(Xg.shape, X.shape)
-    plot_grid(Xg, X)
 
     Ps = get_Ps(J, X.flatten(), Xg)
     Pbs = get_Pbs(J, Xg)
@@ -98,7 +96,7 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
     T = np.array([tres for i in range(M2 + 2)]).T
     U = np.array(ures)
     Ue = np.array(ueres)
-    return XX, T, U, Ue
+    return XX, T, U, Ue, tf
 
 def change_grid(J, ucur, Pso, Pbso, X, Xog, Xo, R3, bc=[0,0], bInterpolate=True):
     if not bInterpolate:
