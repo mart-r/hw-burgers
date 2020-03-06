@@ -18,9 +18,16 @@ from utils.reprint import reprint
 from utils.utils import plot2D, plot_grid, plot3D
 from mkdv.mkdv_adaptive_newest import solve_mkdv
 
+from datetime import datetime
+import logging
+
 
 if __name__ == "__main__":
     print('CALCULATING solve_mkdv')
+    now = datetime.now()
+    filename = now.strftime('%Y_%m_%d_%H_%M_%S.out')
+    logging.basicConfig(filename=filename, level=logging.DEBUG)
+    print("Logging to ", filename)
     nrOfBorders = 1
     if len(sys.argv) > 1:
         JRange = eval(sys.argv[1])
@@ -48,6 +55,7 @@ if __name__ == "__main__":
                         continue
                     md = np.max(np.abs(U - Ue))
                     bests.append((fineWidth, widthTol, a, np.max(T), md))
+                    logging.info("%d\t%f\t%f\t%f\t%f\t%f"%(J, fineWidth, widthTol, a, np.max(T), md))
         print ("BEST:\n", bests)
         minDiff = 1e10
         minFW = "N/A"
