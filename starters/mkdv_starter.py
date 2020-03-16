@@ -30,7 +30,7 @@ def get_bestest(J, nrOfBorders, fwRange=np.arange(.03, .5, .01), wtRange=np.aran
                     mStr = "J=%d, HOHWM, fineWidth = %g, widthTol=%g, a=%g"%(J, fineWidth, widthTol, a)
                     print(mStr)
                     try:
-                        X, T, U, Ue, tf = solve_mkdv(J, widthTol=widthTol,fineWidth=fineWidth, a=a, borders=nrOfBorders)
+                        T, U, Ue, tf = solve_mkdv(J, widthTol=widthTol,fineWidth=fineWidth, a=a, borders=nrOfBorders)[1:]
                     except ValueError as e:
                         print('Got exception (continuing on next)', e)
                         continue
