@@ -22,29 +22,10 @@ from datetime import datetime
 import logging
 
 
-if __name__ == "__main__":
-    print('CALCULATING solve_mkdv')
-    now = datetime.now()
-    filename = now.strftime('%Y_%m_%d_%H_%M_%S.out')
-    logging.basicConfig(filename=filename, level=logging.DEBUG)
-    print("Logging to ", filename)
-    nrOfBorders = 1
-    if len(sys.argv) > 1:
-        JRange = eval(sys.argv[1])
-    else:
-        JRange = [4,5,6,7]
-    for J in JRange:
+def get_bestest(J, nrOfBorders, fwRange=np.arange(.03, .5, .01), wtRange=np.arange(.001, .15, .005), aValues=[]):
         bests = []
-        for fineWidth in np.arange(.03, .5, .01):
-            for widthTol in np.arange(.001, .15, .005):
-                if J == 4:
-                    aValues = np.arange(.881, .906, .001)
-                elif J == 5:
-                    aValues = np.arange(.960, .980, .001)
-                elif J == 6:
-                    aValues = [1.,]
-                elif J == 7:
-                    aValues = [1.,]
+        for fineWidth in fwRange:
+            for widthTol in wtRange:
                 for a in aValues:
                     mStr = "J=%d, HOHWM, fineWidth = %g, widthTol=%g, a=%g"%(J, fineWidth, widthTol, a)
                     print(mStr)
@@ -69,3 +50,24 @@ if __name__ == "__main__":
                 minWT = wt
                 minA = a
         print ("Best at fw=", minFW, "wt=", minWT, "a=", minA, " with max diff of ", minDiff)
+        return(bests)
+
+
+if __name__ == "__main__":
+    print('CALCULATING solve_mkdv')
+    now = datetime.now()
+    filename = now.strftime('%Y_%m_%d_%H_%M_%S.out')
+    logging.basicConfig(filename=filename, level=logging.DEBUG)
+    print("Logging to ", filename)
+    nrOfBorders = 1
+    if len(sys.argv) > 1:
+        JRange = eval(sys.argv[1])
+    else:
+        JRange = [4,5,6,7]
+    for J in JRange:
+        aValues = [1.,]
+        if J == 4:
+            aValues = np.arange(.881, .906, .001)
+        elif J == 5:
+            aValues = np.arange(.960, .980, .001)
+        get_bestest(J, nrOfBorders, aValues=aValues)
