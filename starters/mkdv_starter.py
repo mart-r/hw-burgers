@@ -49,11 +49,12 @@ if __name__ == "__main__":
                     mStr = "J=%d, HOHWM, fineWidth = %g, widthTol=%g, a=%g"%(J, fineWidth, widthTol, a)
                     print(mStr)
                     try:
-                        X, T, U, Ue, tf = solve_mkdv(J, widthTol=widthTol,fineWidth=fineWidth, borders=nrOfBorders)
+                        X, T, U, Ue, tf = solve_mkdv(J, widthTol=widthTol,fineWidth=fineWidth, a=a, borders=nrOfBorders)
                     except ValueError as e:
                         print('Got exception (continuing on next)', e)
                         continue
                     md = np.max(np.abs(U - Ue))
+                    print(np.max(T), md)
                     bests.append((fineWidth, widthTol, a, np.max(T), md))
                     logging.info("%d\t%f\t%f\t%f\t%f\t%f"%(J, fineWidth, widthTol, a, np.max(T), md))
         print ("BEST:\n", bests)
