@@ -135,11 +135,9 @@ class AdaptiveGrid:
             minPart = np.hstack((nuPartMid[:-1] + Xcur[iMin] - self.halfWidth, Xcur[iMin] + self.halfWidth - nuPart[::-1]))
 
             if iMax < iMin:
-                overlap = np.sum(minPart < maxPart[-1])
-                while overlap > 0:
-                    minPart = minPart[1:]
-                    maxPart = maxPart[:-1]
-                    overlap = np.sum(minPart < maxPart[-1]) 
+                mid = (Xcur[iMax] + Xcur[iMin])/2
+                maxPart = maxPart[maxPart <= mid]
+                minPart = minPart[minPart > mid]
             else:
                 raise ValueError("Not implemented case where xMin < xMax")
             mid = np.hstack((maxPart, minPart))
