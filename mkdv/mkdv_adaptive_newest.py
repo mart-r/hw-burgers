@@ -22,7 +22,7 @@ from getpass import getuser
 
 from dynnu.adaptive_grid import AdaptiveGrid, AdaptiveGridType
     
-def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol=0.05, borders=1, a=0.9):
+def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol=0.05, borders=1, a=0.9, Nper=None):
     # tf
     tf = (1 - 2 * x0) / (mu**2 * beta)
     # dt
@@ -33,14 +33,17 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
 
     M2 = 2 * 2**J
     X, Xg = nonuniform_grid(J, 1) # TODO - use adaptive grid 
+    if Nper is None:
+        Nper = int(M2/4) + 1
 
     adaptiveGrid = AdaptiveGrid(J, AdaptiveGridType.DERIV_NU_PLUS_BORDERS, x0, borders,
-                                    a=a, hw=fineWidth/2)#, bc=bc, Nper=int(M2/2)-borders)
+                                    a=a, hw=fineWidth/2, Nper=Nper)#, bc=bc, Nper=int(M2/2)-borders)
     X, Xg = nonuniform_grid(J, 1)
 
     u0x = get_exact_x(X, 0, alpha, beta, mu, x0)
     # then 
     Xg, X = adaptiveGrid.get_grid(X, u0x)
+    # plot_grid(Xg, X)
 
     Ps = get_Ps(J, X.flatten(), Xg)
     Pbs = get_Pbs(J, Xg)
@@ -57,6 +60,8 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
 
     # initial conditions
     u0 = get_exact(X, 0, alpha, beta, mu, x0)
+    # from matplotlib import pyplot as plt
+    # plt.plot(X.flatten(), u0.flatten(), '-o'),plt.show()
 
     # ODE solver
     solver = ode(fun).set_integrator('lsoda', nsteps=int(1e9))
@@ -83,7 +88,11 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, fineWidth=3/16, widthTol
             Xog, Xo = Xg, X
             Ps_old, Pbs_old = Ps, Pbs
             uxcur = solver.y.reshape(1, M2) @ Dx1
-            Xg, X = adaptiveGrid.get_grid(Xo, uxcur)
+            try:
+                Xg, X = adaptiveGrid.get_grid(Xo, uxcur)
+            except ValueError as e:
+                print('ERROR at time', solver.t)
+                raise e
             Ps, Pbs = get_Ps(J, X.flatten(), Xg), get_Pbs(J, Xg)
             ucur = change_grid(J, solver.y, Ps_old, Pbs_old, X, Xog, Xo, R3, bc=bc)
             Dx1 = np.linalg.lstsq(R5(X, Ps, Pbs), R4(X, Ps, Pbs))[0]
@@ -185,7 +194,7 @@ def get_exact_x(X, T, alpha, beta, mu, x0=1/4):
     return h1 * np.cosh(-H1)**(-1) * np.tanh(-H1)
 
 if __name__ == "__main__":
-    X, T, U, Ue, tf = solve_mkdv(J=5, x0=1/4.)
+    X, T, U, Ue, tf = solve_mkdv(J=7, x0=3/10., fineWidth=0.25, widthTol=0.001, a=1.0, mu=120)
     print('TF=', np.max(T), 'max diff:', np.max(np.abs(U - Ue)))
     print(X.shape, T.shape, U.shape, Ue.shape)
     plot3D(X, T, U, bShow=False)
