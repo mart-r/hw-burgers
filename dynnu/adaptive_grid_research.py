@@ -42,15 +42,14 @@ def derive_grid(Xg, w12, bPrint=False):#, span=1):
         print('Xg2', Xg2)
     return Xg2, (Xg2[1:] + Xg2[:-1])/2.
 
-def iterate_derivation(fun, Xg0, w0, interp, maxit=10, diffTol=0.01, bVerbose=False):
+def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False):
     Xg2 = np.array(Xg0) # make copy
     X2  = (Xg2[1:] + Xg2[:-1])/2.
-    w2 = np.array(w0)   # make copy
+    w2 = np.array(interp(X2))
     map = {}
     smallestI = 0
     smallestDiff = 1e10000
     for i in range(maxit):
-        # plt.plot((Xg2[1:] + Xg2[:-1])/2., w2),pl
         dx = np.diff(Xg2)
         cmin, cmax = np.min(w2*dx), np.max(w2*dx)
         cdiff = cmax - cmin
@@ -66,7 +65,7 @@ def iterate_derivation(fun, Xg0, w0, interp, maxit=10, diffTol=0.01, bVerbose=Fa
         Xg2, X2 = fun(Xg2, w2) # iteration
         w2 = interp(X2)
     if bVerbose:
-        print('returning bestt within iterations with diff', smallestDiff, 'at iteration', smallestI)
+        print('returning best within iterations with diff', smallestDiff, 'at iteration', smallestI)
     return map[smallestI][1:3]
 
 
@@ -92,14 +91,9 @@ if __name__ == "__main__":
     from matplotlib import pyplot as plt
     u0 = exact(X)
     w12 = weights(X)
-    # plt.plot(X,w12),plt.show()
-    # w12 = 1./u0
-    # plt.plot(X,w12/np.sum(w12)),plt.show()
-    # Xg2, X2 = derive_grid(Xg, w12)
-    # for it in range(5, 26, 5):
     # for it in range(5, 56, 5):
-    for it in range(51, 56, 100):
-        print('it=', it)
-        Xg2, X2 = iterate_derivation(derive_grid, Xg, w12, weights, maxit=it)
-        u2 = exact(X2)
-        show_diff(X, u0, X2, u2)
+    it = 50
+    print('it=', it)
+    Xg2, X2 = iterate_derivation(derive_grid, Xg, weights, maxit=it, bVerbose=True)
+    u2 = exact(X2)
+    show_diff(X, u0, X2, u2)
