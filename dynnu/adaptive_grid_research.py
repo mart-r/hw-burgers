@@ -70,6 +70,10 @@ def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False,
     return map[smallestI][1:3]
 
 
+def default_derivation(Xg0, weightFunction, maxit=10, diffTol=0.01, bVerbose=False):
+    return iterate_derivation(derive_grid, Xg0, weightFunction, maxit=maxit, diffTol=diffTol, bVerbose=bVerbose)
+
+
 def show_diff(X1, u1, X2, u2, bShow=True):
     plt.plot(X1, u1, '-o')
     plt.plot(X2, u2, '-o')
@@ -93,8 +97,9 @@ if __name__ == "__main__":
     u0 = exact(X)
     w12 = weights(X)
     # for it in range(5, 56, 5):
-    it = 50
+    it = 100
     print('it=', it)
-    Xg2, X2 = iterate_derivation(derive_grid, Xg, weights, maxit=it, bVerbose=True)
+    # Xg2, X2 = iterate_derivation(derive_grid, Xg, weights, maxit=it, bVerbose=True)
+    Xg2, X2 = default_derivation(Xg, weights, maxit=it, bVerbose=True, diffTol=0.0026)
     u2 = exact(X2)
     show_diff(X, u0, X2, u2)
