@@ -12,7 +12,7 @@ sys.path.append('/home/mart/Documents/KybI/2019/python/hw-burgers')
 # from utils.nonuniform_grid import nonuniform_grid
 from utils.utils import plot_grid
 
-
+# The constrained least-squares statement
 def derive_grid(Xg, w12, bPrint=False):#, span=1):
     # dx = np.diff(Xg)
     wi = 1/w12
@@ -49,6 +49,7 @@ def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False,
     map = {}
     smallestI = 0
     smallestDiff = 1e10000
+    prevXg2 = Xg2
     for i in range(maxit):
         dx = np.diff(Xg2)
         cmin, cmax = np.min(w2*dx), np.max(w2*dx)
@@ -65,6 +66,9 @@ def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False,
             return Xg2, X2
         Xg2, X2 = fun(Xg2, w2) # iteration
         w2 = interp(X2)
+        if np.max(np.abs(prevXg2 - Xg2)) < diffTol:
+            if bVerbose:
+                print('Converged at', i, 'because two consecutive grids differed by less than', diffTol)
     if bVerbose:
         print('returning best within iterations with diff', smallestDiff, 'at iteration', smallestI)
     return map[smallestI][1:3]
@@ -89,7 +93,7 @@ def show_diff(X1, u1, X2, u2, bShow=True):
 
 if __name__ == "__main__":
     weightFix = 0.1
-    weightPow = 0.5
+    weightPow = 0.7
     x0 = 0.3;c=50
     N = 32
     Xg = np.linspace(0, 1, N + 1)
@@ -103,9 +107,9 @@ if __name__ == "__main__":
     u0 = exact(X)
     w12 = weights(X)
     # for it in range(5, 56, 5):
-    it = 100
+    it = 10000
     print('it=', it)
     # Xg2, X2 = iterate_derivation(derive_grid, Xg, weights, maxit=it, bVerbose=True)
-    Xg2, X2 = default_derivation(Xg, weights, maxit=it, bVerbose=True, diffTol=0.0026)
+    Xg2, X2 = default_derivation(Xg, weights, maxit=it, bVerbose=True, diffTol=0.00026)
     u2 = exact(X2)
     show_diff(X, u0, X2, u2)
