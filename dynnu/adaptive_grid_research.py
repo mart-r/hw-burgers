@@ -42,7 +42,7 @@ def derive_grid(Xg, w12, bPrint=False):#, span=1):
         print('Xg2', Xg2)
     return Xg2, (Xg2[1:] + Xg2[:-1])/2.
 
-def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False):
+def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False, bExtraVerbose=False):
     Xg2 = np.array(Xg0) # make copy
     X2  = (Xg2[1:] + Xg2[:-1])/2.
     w2 = np.array(interp(X2))
@@ -53,7 +53,8 @@ def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False)
         dx = np.diff(Xg2)
         cmin, cmax = np.min(w2*dx), np.max(w2*dx)
         cdiff = cmax - cmin
-        # print(i, cmin, cmax, cdiff)
+        if bExtraVerbose:
+            print(i, cmin, cmax, cdiff)
         map[i] = (cdiff, Xg2, X2, w2)
         if cdiff < smallestDiff:
             smallestDiff = cdiff
