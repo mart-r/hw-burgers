@@ -22,7 +22,7 @@ from getpass import getuser
 
 from dynnu.adaptive_grid_research import default_derivation, scale_weights as sw
     
-def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0.35):
+def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0.35, minWeight=0.1):
     # tf
     tf = (1 - 2 * x0) / (mu**2 * beta)
     # dt
@@ -32,7 +32,7 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0
     bc = [0, 0]
 
     ## scaling
-    scale_weights = lambda w: sw(w, weightPow=scaling)
+    scale_weights = lambda w: sw(w, weightPow=scaling, weightFix=minWeight)
 
     M2 = 2 * 2**J
     X, Xg = nonuniform_grid(J, 1)
@@ -215,7 +215,7 @@ def get_exact_x(X, T, alpha, beta, mu, x0=1/4):
     return h1 * np.cosh(-H1)**(-1) * np.tanh(-H1)
 
 if __name__ == "__main__":
-    X, T, U, Ue, tf = solve_mkdv(J=5, x0=3/10., widthTol=0.05, mu=40, scaling=0.)
+    X, T, U, Ue, tf = solve_mkdv(J=5, x0=3/10., widthTol=0.05, mu=40, scaling=0.23, minWeight=0.1)
     print('TF=', np.max(T), 'max diff:', np.max(np.abs(U - Ue)))
     print(X.shape, T.shape, U.shape, Ue.shape)
     plot3D(X, T, U, bShow=False)
