@@ -73,6 +73,12 @@ def iterate_derivation(fun, Xg0, interp, maxit=10, diffTol=0.01, bVerbose=False,
 def default_derivation(Xg0, weightFunction, maxit=10, diffTol=0.01, bVerbose=False):
     return iterate_derivation(derive_grid, Xg0, weightFunction, maxit=maxit, diffTol=diffTol, bVerbose=bVerbose)
 
+def scale_weights(weights, weightFix=0.1, weightPow=0.5):
+    w = np.abs(weights)
+    if (weightPow != 1):
+        w = w**weightPow
+    return w + weightFix
+
 
 def show_diff(X1, u1, X2, u2, bShow=True):
     plt.plot(X1, u1, '-o')
