@@ -63,13 +63,13 @@ if __name__ == "__main__":
     else:
         JRange = [4,5,6,7]
     if len(JRange) == 1:
-        filename = filename + "J_%d"%JRange[0]
+        filename = filename + "_J_%d"%JRange[0]
     else:
-        filename = filename + "J_%d_%d"%(JRange[0], JRange[-1])
+        filename = filename + "_J_%d_%d"%(JRange[0], JRange[-1])
     filename = filename + ".out"
     logging.basicConfig(filename=filename, level=logging.DEBUG)
     print("Logging to ", filename)
     for J in JRange:
         minValues = [0.2, 0.1, 0.05]
-        # get_bestest(J, minValues=minValues)
-        get_bestest(J, minValues=[0.1], scaleRange=[0.44, 0.4400000000000001],wtRange=[0.01])
+        get_bestest(J, minValues=minValues)
+        # get_bestest(J, minValues=[0.1], scaleRange=[0.44, 0.4400000000000001],wtRange=[0.01])
