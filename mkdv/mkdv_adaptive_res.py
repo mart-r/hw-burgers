@@ -22,7 +22,7 @@ from getpass import getuser
 
 from dynnu.adaptive_grid_research import default_derivation, scale_weights as sw
     
-def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0.35, minWeight=0.1):
+def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0.35, minWeight=0.1, bUseDeriv=False):
     # tf
     tf = (1 - 2 * x0) / (mu**2 * beta)
     # dt
@@ -36,10 +36,13 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0
 
     M2 = 2 * 2**J
     X, Xg = nonuniform_grid(J, 1)
+    if bUseDeriv:
     # u0x = get_exact_x(X, 0, alpha, beta, mu, x0)
     # plot2D(X, u0x)
     # then 
-    weights = lambda X: scale_weights(get_exact_x(X, 0, alpha, beta, mu, x0))
+        weights = lambda X: scale_weights(get_exact_x(X, 0, alpha, beta, mu, x0))
+    else:
+        weights = lambda X: scale_weights(get_exact(X, 0, alpha, beta, mu, x0) * np.diff(Xg))
     Xg, X = default_derivation(Xg, weights, maxit=100, diffTol=0.001)#, bVerbose=True)
     # plot_grid(Xg, X)
     # u0x = get_exact_x(X, 0, alpha, beta, mu, x0)
@@ -89,18 +92,19 @@ def solve_mkdv(J=4, alpha=-1, beta=1e-2, mu=40, x0=1/4, widthTol=0.05, scaling=0
             # print('moving from', curmid, 'to', newmid)
             Xog, Xo = Xg, X
             Ps_old, Pbs_old = Ps, Pbs
-            uxcur = solver.y.reshape(1, M2) @ Dx1
             Xpad = np.hstack((0, Xo.flatten(), 1))
-            uxpad = np.hstack((0, np.abs(uxcur.flatten()), 0)) # TODO - this might not work for all boundary conditions
-            cur_x_interp = interp1d(Xpad, uxpad)
+            if bUseDeriv:
+                uxcur = solver.y.reshape(1, M2) @ Dx1
+                uxpad = np.hstack((0, np.abs(uxcur.flatten()), 0)) # TODO - this might not work for all boundary conditions
+                cur_x_interp = interp1d(Xpad, uxpad)
             # cur_x_interp = lambda X:get_exact_x(X, solver.t, alpha, beta, mu, x0)
+            else:
+                cur_interp = interp1d(Xpad, np.hstack((0, solver.y.flatten(), 0))) # TODO - this will not work for all boundary condition
             try:
-                def cweights(X):
-                    cw = scale_weights(cur_x_interp(X))
-                    # print('cur weights at', 't=', solver.t)
-                    # plot2D(X, cw)
-                    return cw
-                # weights = lambda X: scale_weights(cur_x_interp(X))
+                if bUseDeriv:
+                    cweights = lambda X: scale_weights(cur_x_interp(X))
+                else:
+                    cweights = lambda X: scale_weights(cur_interp(X))
                 cw = cweights(X)
                 if (cw != cw).any():
                     print('nans...', cw, X, solver.t)
@@ -215,9 +219,11 @@ def get_exact_x(X, T, alpha, beta, mu, x0=1/4):
     return h1 * np.cosh(-H1)**(-1) * np.tanh(-H1)
 
 if __name__ == "__main__":
-    X, T, U, Ue, tf = solve_mkdv(J=5, x0=3/10., widthTol=0.05, mu=40, scaling=0.23, minWeight=0.1)
-    print('TF=', np.max(T), 'max diff:', np.max(np.abs(U - Ue)))
-    print(X.shape, T.shape, U.shape, Ue.shape)
-    plot3D(X, T, U, bShow=False)
-    plot3D(X, T, Ue, bShow=False)
-    plot3D(X, T, U - Ue)
+    for scaling in np.arange(0.30, 0.86, 0.01):
+        print('scaling:', scaling)
+        X, T, U, Ue, tf = solve_mkdv(J=4, x0=3/10., widthTol=0.01, mu=40, scaling=scaling, minWeight=0.1, bUseDeriv=False)
+        print('TF=', np.max(T), 'max diff:', np.max(np.abs(U - Ue)))
+        print(X.shape, T.shape, U.shape, Ue.shape)
+        plot3D(X, T, U, bShow=False)
+        plot3D(X, T, Ue, bShow=False)
+        plot3D(X, T, U - Ue)
