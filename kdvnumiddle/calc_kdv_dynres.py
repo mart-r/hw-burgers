@@ -45,7 +45,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, scaling=3/16, widthTol
     u0 = get_exact(X, 0, alpha, beta, c, x0)
 
     # H, P
-    H_and_P = get_H_and_P(Xg, X, bHO)
+    H_and_P = get_H_and_P(J, Xg, X, bHO)
     Ps, Pbs = H_and_P[0], H_and_P[1]
     R3, R2, R0 = get_Rs(X, bHO)
     S3, S2, S0 = get_Ss(bHO)
@@ -99,7 +99,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, scaling=3/16, widthTol
             Xg, X = default_derivation(Xg, cweights, maxit=1000, diffTol=0.0001)#, bVerbose=True)
             Xg = Xg.reshape(Xog.shape)
             X  = X.reshape(Xo.shape)
-            H_and_P = get_H_and_P(Xg, X, bHO)
+            H_and_P = get_H_and_P(J, Xg, X, bHO)
             Ps, Pbs = H_and_P[0], H_and_P[1]
             ucur = change_grid(J, r.y, Ps_old, Pbs_old, X, Xog, Xo, R3, bHO)
             Dx1, Dx3 = get_Dxs(R3, R2, R0, X, Ps, Pbs)
@@ -120,7 +120,7 @@ def solve_kdv(J=3, alpha=1, beta=1, c=1000, tf=1, x0=1/4, scaling=3/16, widthTol
     print('MAX diff:', np.max(mdiff))
     return xx, tt, U, Ue
 
-def get_H_and_P(Xg, X, bHO):
+def get_H_and_P(J, Xg, X, bHO):
     H = Hm_nu(Xg)
     P2, P3 = [Pn_nu(J, nr, Xg, X.flatten()) for nr in range(2, 4)]
     P2b, P3b = [Pnx_nu(J, nr, 1, Xg) for nr in range(2, 4)]
