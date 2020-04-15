@@ -38,7 +38,7 @@ def get_bestest(J, scaleRange=np.arange(.3, .86, .01), wtRange=np.arange(.002, .
                     md = np.max(np.abs(U - Ue))
                     print(np.max(T), md)
                     bests.append((scaling, widthTol, minWeight, np.max(T), md, tookTime))
-                    logging.info("%d\t%f\t%f\t%f\t%f\t%f\t%f"%(J, scaling, widthTol, minWeight, np.max(T), md, tookTime))
+                    logging.info("%d\t%f\t%f\t%f\t%f\t%20.17f\t%f"%(J, scaling, widthTol, minWeight, np.max(T), md, tookTime))
         print ("BEST:\n", bests)
         minDiff = 1e10
         minScale = "N/A"
